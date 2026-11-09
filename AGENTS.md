@@ -1,52 +1,76 @@
 # Instrucciones permanentes para Codex
 
-## Producto y alcance
+## Producto
 
-Milo Store V1 es exclusivamente una tienda mayorista B2B de repuestos y productos para celulares. Visitantes pueden consultar el catálogo sin precios y solicitar acceso. Solo clientes mayoristas aprobados y activos pueden ver precios y comprar.
+Milo Store es el primer tenant de una plataforma SaaS multiempresa. La plataforma será una aplicación compartida con código común y aislamiento lógico estricto de los datos de cada empresa. La marca visual compartida del SaaS es MILO, distinta de Milo Store y HenkoSoft. HenkoSoft es la desarrolladora y Milo Store es el primer tenant. Los sitios comerciales pueden personalizarse mediante plantillas reutilizables y opciones visuales acotadas. El panel administrativo y de ventas mantiene una interfaz e identidad visual global de MILO para todas las empresas. No implementar white-label completo.
 
-El alcance documental queda pendiente de aprobación personal del propietario. No iniciar desarrollo, scaffold, dependencias, migraciones ni configuración hasta recibir esa aprobación explícita. En tareas documentales, modificar solo los documentos solicitados.
+Milo Store, como primer tenant, conserva el alcance inicial de tienda mayorista. El catálogo de cada empresa siempre es público; cada tenant configura la visibilidad de precios como PUBLIC o AUTHENTICATED_CUSTOMERS. Solo una identidad autenticada vinculada al Customer aprobado/activo del tenant puede ver precios privados. La compra requiere autorización comercial independiente y validación server-side.
 
-Configuración: Argentina, ARS, español, `America/Argentina/Buenos_Aires`, una organización, una sucursal y un depósito inicial.
+El alcance funcional por área y el estado implementado/pendiente/fuera de alcance están en `docs/WHOLESALE_V1_SCOPE.md`. Usarlo como referencia del módulo mayorista; no inferir requisitos adicionales ni presentar alcance aprobado como funcionalidad ya implementada.
 
-## Tecnologías acordadas
+## Aislamiento multi-tenant
 
-- Next.js y TypeScript estricto.
-- Supabase PostgreSQL, Supabase Auth y Supabase Storage.
-- Prisma ORM Community.
-- Tailwind CSS, shadcn/ui y Zod.
-- GitHub.
+- Todo registro de negocio propiedad de una empresa debe asociarse a un tenant mediante `tenant_id` o una convención equivalente, consistente y documentada.
+- Cada usuario pertenece a una única empresa. La empresa administra sus propios usuarios y empleados; ningún usuario puede acceder a datos de otro tenant.
+- Una empresa puede tener una o varias sucursales. Un empleado puede estar asignado a una o varias sucursales de su empresa; los administradores autorizados tienen alcance a todas las sucursales de esa empresa.
+- Roles acordados: Dueño, Administrador, Encargado, Vendedor, Técnico y Depósito. Un empleado puede tener varios roles; los roles operativos pueden variar por sucursal. Dueño y Administrador tienen alcance general dentro de su empresa; los demás roles respetan las sucursales asignadas.
+- Dueño tiene control total de su empresa. Administrador gestiona la empresa, pero no transfiere la propiedad ni elimina al Dueño. Encargado supervisa sucursales asignadas y no administra usuarios ni cambia permisos. Vendedor cubre operaciones comerciales; Técnico corresponde a reparaciones y órdenes de servicio; Depósito cubre inventario y movimientos de stock. No inferir permisos más específicos.
+- El alcance de sucursales nunca amplía el alcance de empresa. Ningún usuario accede a otra empresa. La administración central de HenkoSoft es separada de los roles empresariales.
+- Resolver el tenant y la membresía en servidor en cada operación. No confiar en `tenant_id`, rol o permiso enviados por el navegador.
+- Filtrar y autorizar todas las lecturas y escrituras por tenant. Aplicar restricciones y relaciones compuestas para impedir que una fila de un tenant referencie datos de otro.
+- Ningún usuario, incluido quien administre la plataforma, accede a datos de negocio de otra empresa. Las funciones centrales se limitan a la administración de información propia de la plataforma y no amplían el acceso a datos de tenant.
+- RLS puede complementar controles, pero no reemplaza autorización de aplicación cuando Prisma usa una conexión con privilegios elevados.
+
+## Identidad y datos de empresa
+
+Cada tenant podrá mantener nombre comercial, razón social, CUIT, datos fiscales, dirección, contacto, logo, usuarios, empleados y datos comerciales propios. Los datos y documentos de una empresa permanecen aislados por tenant. El logo podrá aparecer en el sitio comercial y en presupuestos, comprobantes, reportes y documentos comerciales del tenant. La personalización del storefront no cambia el tema ni la identidad visual global del panel.
+
+## Módulos y planes
+
+La plataforma podrá ofrecer capacidades de reparaciones/órdenes de servicio, ventas minoristas, inventario/productos, gestión de clientes y distribución mayorista. Su disponibilidad podrá depender del plan. Esto no autoriza a diseñar o implementar ahora cada módulo, automatización, facturación ni pagos de suscripción. La administración SaaS podrá gestionar empresas y el estado de las cuentas; planes, suscripciones, límites y módulos habilitados son parte del modelo futuro por definir.
+
+Cada empresa puede administrar una o varias sucursales. La asignación de usuarios a sucursales puede ser de una a varias; el administrador autorizado puede abarcar todas las sucursales de su propia empresa. No se presupone una sucursal única.
+
+## Tecnologías y arquitectura
+
+- Next.js, React, TypeScript estricto y Tailwind CSS.
+- PostgreSQL como base prevista; se conservan las decisiones existentes de Supabase PostgreSQL/Storage y Better Auth, Prisma ORM Community, shadcn/ui, Zod y GitHub mientras no sean reemplazadas por una decisión aprobada.
+- Better Auth administra identidad, credenciales y sesiones; MILO administra empresas, empleados, sucursales, roles y permisos. Email globalmente único; cada identidad puede vincularse como máximo a un UserProfile mediante authUserId, nunca mediante email. No usar Organization ni registro público libre. Empleados por invitación de OWNER/ADMIN; implementación de invitaciones y proveedor de correo pendientes.
+- Aplicación modular y monolítica. No agregar microservicios sin una necesidad concreta y aprobada.
 - Docker y Docker Compose son opcionales para desarrollo local.
+- No cambiar tecnologías ni contratar/activar servicios pagos sin autorización.
 
-No cambiar tecnologías ni contratar/activar servicios pagos sin autorización explícita.
+Configuración inicial: Argentina, ARS, español, `America/Argentina/Buenos_Aires`.
 
-## Alcance funcional de V1
+## Seguridad, privacidad e integridad
 
-- Roles: Administrador y cliente mayorista autorizado. Sin autorregistro.
-- Solicitud de acceso pública y aprobación manual.
-- Catálogo público sin precios; precios visibles solo a clientes autorizados y activos.
-- Productos con SKU, nombre, descripción, fotos, categoría, marca y estado de publicación.
-- Búsqueda básica y ficha de producto; lista general de precios mayoristas.
-- Inventario sencillo con entradas, salidas y ajustes registrados. Stock nunca negativo.
-- Carrito, pedidos online y administración básica de productos, clientes y pedidos.
-- Transferencia y efectivo con registro y confirmación manual.
-- Acceso directo a WhatsApp Business y experiencia mobile-first. Instalar como PWA solo si no agrega complejidad significativa.
+- Validar entradas externas con Zod en servidor. Autenticar y autorizar cada operación server-side; denegar por defecto.
+- Prisma exclusivamente en servidor. No exponer secretos, credenciales ni `SUPABASE_SERVICE_ROLE_KEY` al cliente.
+- El catálogo público siempre puede consultarse; respetar Tenant.priceVisibility en servidor. No entregar precios privados en JSON, endpoints, HTML/RSC, metadatos, logs ni cachés compartidas.
+- No habilitar autorregistro de clientes mayoristas ni almacenar contraseñas en texto plano.
+- Tratar datos de contacto, fiscales e identificadores como información protegida; limitar recolección, acceso, logs y retención.
+- La PWA, si se implementa para el tenant, cachea únicamente shell y recursos públicos; no cachear sesión ni datos privados.
+- El stock no puede ser negativo y cada cambio genera un movimiento persistente. Calcular precios y totales en servidor con importes decimales y moneda explícita.
+- No activar pagos de suscripciones ni integraciones de pago sin autorización expresa.
 
-No ampliar V1 con funciones no incluidas en esta lista. Las funciones excluidas solo pueden registrarse como posibilidades futuras, sin diseñarlas ni implementarlas.
+## Estructura pública aprobada
 
-## Método de trabajo
+- `/` y las páginas `/plataforma`, `/funcionalidades`, `/soluciones`, `/nosotros` y `/contacto` pertenecen a MILO SaaS. `/tiendas/milo-store` es el portal comercial de Milo Store.
+- Los portales comerciales se organizan en `app/(comercial)/tiendas/[slug]/`. El registro editorial server-only reconoce exclusivamente `milo-store`, sin tenantId, vínculo a Prisma ni autorización empresarial. Un slug desconocido o inválido devuelve 404. Los contratos, contenidos y tokens del storefront no son campos de Tenant ni crean datos en la base.
+- `/acceso` es informativa hasta implementar el ingreso en una etapa autorizada. No simular login, paneles o funcionalidades comerciales. El WhatsApp existente corresponde exclusivamente a Milo Store. La personalización visual se limita al sitio comercial; el panel mantiene la identidad global.
 
-- Antes de editar, revisar estado de Git, archivos e instrucciones; preservar cambios ajenos a la tarea.
-- Trabajar por etapas y un módulo a la vez. Antes de implementarlo, relevar requisitos, dependencias, propuesta y criterios de aceptación.
-- Validar toda entrada externa con Zod en servidor. Autenticar y autorizar cada operación server-side, denegar por defecto y comprobar que el cliente esté activo y acceda solo a sus datos.
-- Prisma exclusivamente en servidor. Nunca exponer credenciales, secretos de DB o `SUPABASE_SERVICE_ROLE_KEY` al cliente.
-- Visitantes reciben solo campos permitidos del catálogo. No incluir precios/costos en consultas, HTML, RSC, metadatos, respuestas públicas, logs ni caché.
-- No almacenar contraseñas en texto plano. No habilitar autorregistro.
-- La PWA, si se implementa, cachea únicamente shell y recursos públicos. No cachear datos de clientes, precios, carrito, sesión o pedidos.
-- Stock no negativo; cada variación se registra como movimiento persistente. No editar el saldo directamente.
-- Importes decimales con moneda explícita (ARS); calcular precios y totales en servidor.
-- Registrar decisiones duraderas en `docs/DECISIONS.md` y mantener los seis documentos consistentes.
-- No activar servicios pagos, facturación, dominios ni gasto por uso sin autorización. Informar solo validaciones realmente ejecutadas.
+## Método y estado
 
-## Estado de aprobación
+- Antes de editar, revisar estado de Git, archivos e instrucciones y preservar cambios existentes.
+- Registrar decisiones duraderas en `docs/DECISIONS.md`; mantener los seis documentos coherentes.
+- Trabajar por etapas y módulo a la vez. Antes de implementar, relevar dependencias, propuesta y criterios de aceptación.
+- La documentación multi-tenant debe ser aprobada antes de implementar cambios de datos o acceso. No asumir autorización de código por una tarea exclusivamente documental.
+- Informar solo validaciones ejecutadas y no presentar funciones futuras como implementadas.
 
-La documentación debe ser revisada y aprobada explícitamente por el usuario. No comenzar el desarrollo ni configurar servicios antes de recibir esa aprobación.
+
+## Reglas futuras de acceso comercial e historial
+
+- Catalogo por tenant siempre publico para productos publicados; Tenant.priceVisibility controla precios PUBLIC o AUTHENTICATED_CUSTOMERS, default AUTHENTICATED_CUSTOMERS.
+- En modo privado, solo identidad autenticada vinculada a Customer autorizado/activo del mismo tenant recibe precios; UserProfile y CustomerAccessRequest no dan acceso automaticamente. Compra se valida por separado en servidor.
+- Toda escritura de OrderLine bloquea la ProductPresentation padre antes de guardar. StockBalance/StockMovement bloquean Product antes de leer o escribir cantidades. Operaciones multi-fila adquieren locks (tenantId,id) en orden estable y en una transaccion.
+- No editar ni borrar StockMovement; no se definen reversos. No congelar OrderLine por estado hasta aprobar su ciclo de vida; los casos de uso conservan snapshots historicos una vez finalizados.
