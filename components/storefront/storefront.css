@@ -1,0 +1,60 @@
+/* All commercial tokens and selectors are confined to the storefront subtree. */
+@layer components {
+  .storefront {
+    --line: var(--store-line);
+    --muted: var(--store-muted);
+    background: var(--store-background);
+    color: var(--store-foreground);
+  }
+  .storefront .site-header { background: color-mix(in srgb, var(--store-background) 95%, transparent); }
+  .storefront .site-footer { background: var(--store-footer-background); }
+  .storefront .button-blue { background: var(--store-accent); border-color: var(--store-accent-border); }
+  .storefront .button-blue:hover { background: var(--store-accent-hover); }
+  .storefront .text-silver { color: var(--store-silver); }
+  .storefront .brand-store .brand-wordmark { font-size: 1.2rem; letter-spacing: -.04em; }
+  .storefront .brand-tag { color: var(--muted); font-size: .55rem; letter-spacing: .12em; margin-left: .25rem; }
+  .storefront .store-platform-bar { background: #152035; border-bottom: 1px solid #2c3c54; }
+  .storefront .store-platform-bar > div { display: flex; justify-content: space-between; padding-block: .65rem; color: #b5c6e2; font-size: .62rem; }
+  .storefront .store-platform-bar span { color: #8fa6ca; }
+  .storefront .store-hero { display: grid; grid-template-columns: 1.15fr 1fr; align-items: center; gap: 3rem; padding-block: 5rem; }
+  .storefront .store-hero h1 { font-size: clamp(3rem, 5.6vw, 5.4rem); }
+  .storefront .store-art { position: relative; min-height: 430px; display: grid; place-items: center; isolation: isolate; }
+  .storefront .store-art::before { position: absolute; content: ""; inset: 0; background: radial-gradient(ellipse, #203451, transparent 65%); z-index: -1; }
+  .storefront .store-orbit { position: absolute; width: 90%; aspect-ratio: 1; border: 1px solid #3f5271; border-radius: 50%; transform: rotate(-30deg) scaleY(.62); }
+  .storefront .orbit-two { width: 85%; transform: rotate(48deg) scaleY(.7); border-color: #233954; }
+  .storefront .store-art-center { width: 205px; min-height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; border: 1px solid #56677e; border-radius: 14px; background: linear-gradient(145deg, #212f43, #0d1724); box-shadow: 0 25px 60px #0008; transform: rotate(-5deg); }
+  .storefront .store-art-center > span { font-size: 1.3rem; font-weight: 600; letter-spacing: -.04em; }
+  .storefront .store-art-center > small { color: #9fb2d0; letter-spacing: .18em; font-size: .5rem; }
+  .storefront .orbit-label { position: absolute; border: 1px solid #324866; background: #131f30; padding: .7rem 1rem; font-size: .63rem; color: #c1d0e5; }
+  .storefront .label-top { top: 40px; right: 0; }
+  .storefront .label-bottom { bottom: 35px; left: 0; }
+  .storefront .store-catalog { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; }
+  .storefront .store-steps { background: var(--store-surface); border-block: 1px solid var(--line); }
+  .storefront .section-aside { max-width: 340px; font-size: .84rem; }
+  .storefront .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3rem; padding-top: 1.3rem; }
+  .storefront .steps-grid > article { border-top: 1px solid #3c506d; padding-top: 1.4rem; }
+  .storefront .steps-grid h3 { margin-block: 1.4rem 1rem; }
+  .storefront .steps-grid p { font-size: .83rem; }
+  .storefront .store-contact { display: flex; justify-content: space-between; align-items: center; gap: 3rem; }
+  .storefront .store-contact p { max-width: 560px; margin-top: 1.3rem; }
+  .storefront .store-contact .button { flex-shrink: 0; }
+}
+
+@media (max-width: 1100px) {
+  .storefront .store-contact { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 900px) {
+  .storefront .store-catalog { gap: 3rem; }
+}
+
+@media (max-width: 680px) {
+  .storefront .store-hero { grid-template-columns: 1fr; gap: 2.5rem; padding-block: 3.3rem; }
+  .storefront .store-catalog { grid-template-columns: 1fr; gap: 2.5rem; }
+  .storefront .store-hero h1 { font-size: clamp(2.9rem, 10.4vw, 4.4rem); }
+  .storefront .store-art { min-height: 350px; }
+  .storefront .store-art-center { min-height: 200px; width: 185px; }
+  .storefront .steps-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .storefront .steps-grid h3 { margin-top: 1rem; }
+  .storefront .brand-tag { display: none; }
+}
