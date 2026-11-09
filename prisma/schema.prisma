@@ -1,0 +1,496 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+enum PriceVisibility {
+  PUBLIC
+  AUTHENTICATED_CUSTOMERS
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Global authentication data. Business membership remains in UserProfile.
+model AuthUser {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  sessions    AuthSession[]
+  accounts    AuthAccount[]
+  userProfile UserProfile?
+
+  @@map("auth_users")
+}
+
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime @db.Timestamptz(6)
+  token     String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model AuthAccount {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime? @db.Timestamptz(6)
+  refreshTokenExpiresAt DateTime? @db.Timestamptz(6)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+  user                  AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@unique([providerId, accountId])
+  @@map("auth_accounts")
+}
+
+model AuthVerification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @db.Timestamptz(6)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([identifier])
+  @@map("auth_verifications")
+}
+
+model Tenant {
+  id             String   @id @default(uuid()) @db.Uuid
+  commercialName String?
+  legalName      String?
+  taxId          String?
+  fiscalData     Json?    @db.JsonB
+  address        String?
+  contactData    Json?    @db.JsonB
+  logoKey        String?
+  currency       String?  @db.Char(3)
+  locale         String?
+  timeZone       String?
+  accountStatus   String?
+  priceVisibility PriceVisibility @default(AUTHENTICATED_CUSTOMERS)
+  createdAt      DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  userProfiles           UserProfile[]
+  branches               Branch[]
+  userRoleAssignments    UserRoleAssignment[]
+  products               Product[]
+  productPresentations   ProductPresentation[]
+  categories             Category[]
+  brands                 Brand[]
+  productImages          ProductImage[]
+  wholesalePrices        WholesalePrice[]
+  customers              Customer[]
+  customerAccessRequests CustomerAccessRequest[]
+  wholesaleOrders        WholesaleOrder[]
+  orderLines             OrderLine[]
+  orderStatusEvents      OrderStatusEvent[]
+  paymentRecords         PaymentRecord[]
+  stockBalances          StockBalance[]
+  stockMovements         StockMovement[]
+  auditEvents            AuditEvent[]
+
+  @@map("tenants")
+}
+
+model UserProfile {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  authUserId String?  @unique
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+
+  authUser               AuthUser?                 @relation(fields: [authUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  tenant                 Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  roleAssignments        UserRoleAssignment[]
+  reviewedAccessRequests CustomerAccessRequest[] @relation("AccessRequestReviewer")
+  orderStatusEvents      OrderStatusEvent[]      @relation("OrderStatusActor")
+  recordedPayments       PaymentRecord[]         @relation("PaymentRecorder")
+  confirmedPayments      PaymentRecord[]         @relation("PaymentConfirmer")
+  stockMovements         StockMovement[]         @relation("StockMovementActor")
+  auditEvents            AuditEvent[]            @relation("AuditEventActor")
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+  @@map("user_profiles")
+}
+
+model Branch {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  roleAssignments UserRoleAssignment[]
+  wholesaleOrders WholesaleOrder[]
+  stockBalances   StockBalance[]
+  stockMovements  StockMovement[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+  @@map("branches")
+}
+
+model RoleDefinition {
+  id              String @id @default(uuid()) @db.Uuid
+  code            String @unique
+  name            String
+  assignmentScope String
+
+  assignments UserRoleAssignment[]
+
+  @@unique([id, assignmentScope])
+  @@map("role_definitions")
+}
+
+model UserRoleAssignment {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  userProfileId   String   @db.Uuid
+  roleId          String   @db.Uuid
+  assignmentScope String
+  branchId        String?  @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  userProfile UserProfile    @relation(fields: [tenantId, userProfileId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  role        RoleDefinition @relation(fields: [roleId, assignmentScope], references: [id, assignmentScope], onDelete: Restrict, onUpdate: Restrict)
+  branch      Branch?        @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([tenantId, userProfileId])
+  @@index([tenantId, branchId, roleId])
+  @@map("user_role_assignments")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  products Product[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+  @@map("categories")
+}
+
+model Brand {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  products Product[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+  @@map("brands")
+}
+
+model Product {
+  id                       String   @id @default(uuid()) @db.Uuid
+  tenantId                 String   @db.Uuid
+  sku                      String
+  name                     String
+  description              String
+  baseUnitCode             String
+  baseUnitDimensionCode    String
+  allowsFractionalQuantity Boolean
+  categoryId               String?  @db.Uuid
+  brandId                  String?  @db.Uuid
+  isPublished              Boolean
+  createdAt                DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt                DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant         Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  baseUnit       UnitOfMeasure           @relation("ProductBaseUnit", fields: [baseUnitCode, baseUnitDimensionCode], references: [code, dimensionCode], onDelete: Restrict, onUpdate: Restrict)
+  category       Category?               @relation(fields: [tenantId, categoryId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  brand          Brand?                  @relation(fields: [tenantId, brandId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  images         ProductImage[]
+  presentations  ProductPresentation[]
+  stockBalances  StockBalance[]
+  stockMovements StockMovement[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, id, baseUnitDimensionCode])
+  @@unique([tenantId, sku])
+  @@index([tenantId, categoryId])
+  @@index([tenantId, brandId])
+  @@index([tenantId, isPublished])
+  @@map("products")
+}
+
+model UnitOfMeasure {
+  code          String @id
+  name          String
+  dimensionCode String
+
+  productsAsBaseUnit Product[]            @relation("ProductBaseUnit")
+  presentations      ProductPresentation[]
+
+  @@unique([code, dimensionCode])
+  @@index([dimensionCode])
+  @@map("units_of_measure")
+}
+
+model ProductPresentation {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  productId        String   @db.Uuid
+  name             String
+  unitCode         String
+  dimensionCode    String
+  conversionFactor Decimal  @db.Decimal(18, 3)
+  isEnabled        Boolean
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  product     Product         @relation(fields: [tenantId, productId, dimensionCode], references: [tenantId, id, baseUnitDimensionCode], onDelete: Restrict, onUpdate: Restrict)
+  unit        UnitOfMeasure   @relation(fields: [unitCode, dimensionCode], references: [code, dimensionCode], onDelete: Restrict, onUpdate: Restrict)
+  price       WholesalePrice?
+  orderLines  OrderLine[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, productId, isEnabled])
+  @@map("product_presentations")
+}
+
+model ProductImage {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  productId  String   @db.Uuid
+  storageKey String
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  product Product @relation(fields: [tenantId, productId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, productId])
+  @@map("product_images")
+}
+
+model WholesalePrice {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tenantId             String   @db.Uuid
+  productPresentationId String  @db.Uuid
+  amount               Decimal  @db.Decimal(18, 2)
+  updatedAt            DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  presentation       ProductPresentation @relation(fields: [tenantId, productPresentationId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, productPresentationId])
+  @@index([tenantId])
+  @@map("wholesale_prices")
+}
+
+model Customer {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  contactData Json?    @db.JsonB
+  status      String
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  orders WholesaleOrder[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, status])
+  @@map("customers")
+}
+
+model CustomerAccessRequest {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @db.Uuid
+  submittedData    Json      @db.JsonB
+  status           String
+  reviewedByUserId String?   @db.Uuid
+  reviewedAt       DateTime? @db.Timestamptz(6)
+  createdAt        DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime  @updatedAt @db.Timestamptz(6)
+
+  tenant   Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reviewer UserProfile? @relation("AccessRequestReviewer", fields: [tenantId, reviewedByUserId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, status, createdAt])
+  @@map("customer_access_requests")
+}
+
+model WholesaleOrder {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  branchId   String   @db.Uuid
+  customerId String   @db.Uuid
+  status     String
+  currency   String   @db.Char(3)
+  total      Decimal  @db.Decimal(18, 2)
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant         Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch         Branch             @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  customer       Customer           @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  lines          OrderLine[]
+  statusEvents   OrderStatusEvent[]
+  paymentRecords PaymentRecord[]
+  stockMovements StockMovement[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, branchId, id])
+  @@index([tenantId, branchId, customerId, createdAt])
+  @@index([tenantId, branchId, status, createdAt])
+  @@map("wholesale_orders")
+}
+
+model OrderLine {
+  id                        String  @id @default(uuid()) @db.Uuid
+  tenantId                  String  @db.Uuid
+  orderId                   String  @db.Uuid
+  productPresentationId     String  @db.Uuid
+  skuSnapshot               String
+  nameSnapshot              String
+  presentationNameSnapshot  String
+  unitSnapshot              String
+  quantitySnapshot          Decimal @db.Decimal(18, 3)
+  conversionFactorSnapshot  Decimal @db.Decimal(18, 3)
+  baseQuantitySnapshot      Decimal @db.Decimal(18, 3)
+  unitPriceSnapshot         Decimal @db.Decimal(18, 2)
+  lineTotal                 Decimal @db.Decimal(18, 2)
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  order        WholesaleOrder     @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  presentation ProductPresentation @relation(fields: [tenantId, productPresentationId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, orderId])
+  @@map("order_lines")
+}
+
+model OrderStatusEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  orderId        String   @db.Uuid
+  actorUserId    String?  @db.Uuid
+  previousStatus String?
+  newStatus      String
+  occurredAt     DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  order  WholesaleOrder @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor  UserProfile?   @relation("OrderStatusActor", fields: [tenantId, actorUserId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([tenantId, orderId, occurredAt])
+  @@map("order_status_events")
+}
+
+model PaymentRecord {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @db.Uuid
+  orderId           String    @db.Uuid
+  method            String
+  status            String
+  amount            Decimal   @db.Decimal(18, 2)
+  currency          String    @db.Char(3)
+  reference         String?
+  recordedByUserId  String    @db.Uuid
+  confirmedByUserId String?   @db.Uuid
+  confirmedAt       DateTime? @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(6)
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  order       WholesaleOrder @relation(fields: [tenantId, orderId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  recordedBy  UserProfile    @relation("PaymentRecorder", fields: [tenantId, recordedByUserId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  confirmedBy UserProfile?   @relation("PaymentConfirmer", fields: [tenantId, confirmedByUserId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([tenantId, orderId, createdAt])
+  @@map("payment_records")
+}
+
+model StockBalance {
+  tenantId       String   @db.Uuid
+  branchId       String   @db.Uuid
+  productId      String   @db.Uuid
+  quantityOnHand Decimal  @db.Decimal(18, 3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch  Branch  @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  product Product @relation(fields: [tenantId, productId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([tenantId, branchId, productId])
+  @@map("stock_balances")
+}
+
+model StockMovement {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @db.Uuid
+  branchId      String   @db.Uuid
+  productId     String   @db.Uuid
+  movementType  String
+  quantityDelta Decimal  @db.Decimal(18, 3)
+  sourceOrderId String?  @db.Uuid
+  actorUserId   String   @db.Uuid
+  occurredAt    DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  branch      Branch          @relation(fields: [tenantId, branchId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  product     Product         @relation(fields: [tenantId, productId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+  sourceOrder WholesaleOrder? @relation(fields: [tenantId, branchId, sourceOrderId], references: [tenantId, branchId, id], onDelete: Restrict, onUpdate: Restrict)
+  actor       UserProfile     @relation("StockMovementActor", fields: [tenantId, actorUserId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, branchId, productId, occurredAt])
+  @@index([tenantId, branchId, sourceOrderId])
+  @@map("stock_movements")
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  actorUserId String?  @db.Uuid
+  action      String
+  entityType  String
+  entityId    String   @db.Uuid
+  occurredAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  actor  UserProfile? @relation("AuditEventActor", fields: [tenantId, actorUserId], references: [tenantId, id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([tenantId, occurredAt])
+  @@map("audit_events")
+}
