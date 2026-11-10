@@ -1,0 +1,165 @@
+/* ERP shell and dashboard: scoped to MILO's private panel. */
+@layer components {
+  .milo-erp { grid-template-columns: 264px minmax(0, 1fr); height: 100dvh; min-height: 0; }
+  .milo-erp .milo-sidebar { padding: 1.4rem .9rem .8rem; background: #151e2c; border-right: 1px solid #2a374a; color: #e8eef7; z-index: 40; }
+  .milo-erp .milo-sidebar-heading { padding-inline: .75rem; }
+  .milo-erp-brand { display: grid; gap: .4rem; }
+  .milo-erp-brand > span { font-size: .65rem; color: #abbad0; }
+  .milo-erp .milo-sidebar { position: relative; height: 100%; min-height: 0; overflow-y: auto; }
+  .milo-erp .milo-sidebar-body { min-height: 0; flex: 1 0 auto; }
+  .milo-erp .milo-workspace { margin-block: 1.5rem 1.2rem; padding: .8rem; background: #1c293c; }
+  .milo-erp .milo-workspace > div { min-width: 0; }
+  .milo-erp .milo-workspace small { font-size: .6rem; }
+  .milo-erp-scope { display: block; font-size: .63rem; color: #b5c4d9; margin-top: .35rem; line-height: 1.5; overflow-wrap: anywhere; }
+  .milo-erp #panel-navigation { min-height: 0; }
+  .milo-erp .milo-sidebar, .milo-erp .milo-panel-content, .milo-erp .milo-catalog-table-wrap { scrollbar-width: thin; scrollbar-gutter: stable; overscroll-behavior: contain; }
+  .milo-erp .milo-nav-label { font-size: .59rem; letter-spacing: .1em; margin: 0 .8rem .6rem; }
+  .milo-erp-navigation, .milo-erp-submenu { list-style: none; margin: 0; padding: 0; }
+  .milo-erp-navigation { display: grid; gap: .18rem; }
+  .milo-erp-nav-item { width: 100%; display: flex; align-items: center; gap: .75rem; min-height: 44px; padding: .7rem .8rem; color: #c6d2e5; border: 1px solid transparent; background: transparent; border-radius: 6px; text-align: left; font-size: .82rem; }
+  .milo-erp-nav-item > svg { width: 19px; height: 19px; flex-shrink: 0; }
+  .milo-erp-nav-item:not(:disabled):hover { background: #22324b; color: #fff; }
+  .milo-erp-section-active { background: #244575; border-color: #3d649c; color: #fff; }
+  .milo-erp-chevron { margin-left: auto; color: #a8c8f9; }
+  .milo-erp-submenu { margin: .25rem .5rem .5rem 1.4rem; padding-left: .8rem; border-left: 1px solid #3d4c64; }
+  .milo-erp-submenu[hidden] { display: none; }
+  .milo-erp-submenu a { display: block; padding: .7rem .8rem; border-radius: 5px; font-size: .8rem; color: #b5c7e1; min-height: 44px; }
+  .milo-erp-submenu a:hover, .milo-erp-submenu .milo-erp-sub-active { color: #fff; background: #243751; }
+  .milo-erp-submenu .milo-erp-sub-active { box-shadow: inset 3px 0 #80acff; }
+  .milo-erp-nav-item:disabled { color: #a1aec2; cursor: default; }
+  .milo-erp-soon { margin-left: auto; font-size: .57rem; color: #bac7da; background: #263246; padding: .22rem .35rem; border-radius: 4px; }
+  .milo-erp .milo-sidebar-footer { padding: 1rem .5rem 0; gap: .8rem; }
+  .milo-erp-menu-button { display: inline-flex; align-items: center; justify-content: center; gap: .6rem; border: 1px solid #3d4e67; border-radius: 6px; background: #1b2a40; padding: .65rem; color: #d7e4f7; font-size: .75rem; min-height: 44px; }
+  .milo-erp .milo-mobile-menu { display: none; }
+  .milo-erp-collapse { justify-content: flex-start; }
+  .milo-erp[data-collapsed="true"] { grid-template-columns: 78px minmax(0, 1fr); }
+  .milo-erp[data-collapsed="true"] .milo-sidebar { padding-inline: .65rem; }
+  .milo-erp[data-collapsed="true"] .milo-sidebar-heading { padding-inline: 0; }
+  .milo-erp[data-collapsed="true"] .brand-wordmark, .milo-erp[data-collapsed="true"] .milo-erp-brand > span,
+  .milo-erp[data-collapsed="true"] .milo-workspace, .milo-erp[data-collapsed="true"] .milo-nav-label,
+  .milo-erp[data-collapsed="true"] .milo-erp-nav-label, .milo-erp[data-collapsed="true"] .milo-erp-chevron,
+  .milo-erp[data-collapsed="true"] .milo-erp-soon { display: none; }
+  .milo-erp[data-collapsed="true"] .milo-erp-brand { justify-items: center; margin-bottom: 1.5rem; }
+  .milo-erp[data-collapsed="true"] .milo-erp-nav-item { justify-content: center; padding-inline: .5rem; }
+  .milo-erp .milo-panel-body { min-height: 0; background: #f2f5fa; color: #24334b; color-scheme: light; }
+  .milo-erp .milo-topbar { flex-shrink: 0; min-height: 76px; padding: .75rem 1.5rem; background: #fff; border-color: #dce3ee; position: relative; z-index: 20; }
+  .milo-erp-top-context { min-width: 0; overflow-wrap: anywhere; }
+  .milo-erp .milo-topbar-account { flex-shrink: 0; }
+  .milo-erp .milo-topbar-label { color: #586a83; font-size: .58rem; letter-spacing: .08em; }
+  .milo-erp .milo-topbar p { color: #20344f; font-weight: 600; font-size: .95rem; overflow-wrap: anywhere; }
+  .milo-erp-top-context > small { display: block; font-size: .69rem; color: #5a6c85; margin-top: .35rem; }
+  .milo-erp .milo-account-name { display: grid; gap: .35rem; color: #243d60; font-size: .8rem; }
+  .milo-erp .milo-account-name small { color: #61718a; font-size: .55rem; letter-spacing: .07em; }
+  .milo-erp .milo-panel-content { flex: 1 1 0; min-height: 0; overflow: auto; padding: 1rem 1.5rem; max-width: none; scroll-padding: 1rem; }
+  .milo-erp .milo-panel-footer { flex-shrink: 0; padding: .6rem 1.5rem; flex-wrap: wrap; background: #fff; border-color: #dce3ee; color: #566980; }
+  .milo-erp :where(a, button, summary, [tabindex]):focus-visible { outline: 2px solid #3976cc; outline-offset: 3px; }
+  .milo-erp .milo-sidebar :where(a, button):focus-visible { outline-color: #a8c8f9; }
+  .milo-erp .milo-catalog-table-wrap { max-width: 100%; max-height: clamp(12rem, 45dvh, 36rem); overflow: auto; scroll-padding-block: 3.5rem 1rem; }
+  .milo-erp .milo-catalog-table th { position: sticky; top: 0; z-index: 1; }
+  .milo-erp .milo-panel-card { background: #fff; border-color: #dce3ee; box-shadow: 0 3px 15px #20345205; }
+  .milo-erp .milo-panel-welcome { padding-bottom: 1.8rem; }
+  .milo-erp .milo-panel-welcome h1 { font-size: clamp(1.7rem, 3vw, 2.3rem); color: #1a2f50; }
+  .milo-erp .milo-panel-welcome p:not(.milo-card-kicker), .milo-erp .milo-company-hint { color: #52647d; }
+  .milo-erp .milo-card-kicker { color: #3164ac; font-size: .6rem; }
+  .milo-erp .milo-field label { color: #2e425f; }
+  .milo-erp .milo-field input, .milo-erp .milo-catalog-form select, .milo-erp .milo-catalog-form textarea { background: #fff; border-color: #b9c7da; color: #1e3555; }
+  .milo-erp .milo-field input::placeholder { color: #62738b; }
+  .milo-erp .milo-secondary-button { background: #f5f8fc; border-color: #bfccdf; color: #25456d; }
+  .milo-erp .milo-secondary-button:hover { background: #e8eff9; }
+  .milo-erp .milo-primary-button { box-shadow: 0 3px 6px #2867ea15; }
+  .milo-erp .milo-catalog-table th, .milo-erp .milo-catalog-table td { border-color: #dce3ee; }
+  .milo-erp .milo-catalog-table th { color: #526780; background: #f7f9fc; }
+  .milo-erp .milo-catalog-table td a, .milo-erp .text-link { color: #245da9; }
+  .milo-erp .milo-catalog-table td > span:not(.milo-role-badge), .milo-erp .milo-catalog-empty, .milo-erp .milo-catalog-pagination { color: #52647d; }
+  .milo-erp .milo-product-advanced { background: #f7f9fd; border-color: #c6d4e7; }
+  .milo-erp .milo-product-advanced > summary, .milo-erp .milo-presentation-new summary, .milo-erp .milo-company-readonly summary { color: #28578f; }
+  .milo-erp .milo-presentation-new, .milo-erp .milo-presentation-price, .milo-erp .milo-product-price-row { border-color: #d1dceb; }
+  .milo-erp .milo-role-badge { color: #254c82; background: #eaf1fc; border-color: #cadbf2; }
+  .milo-erp .milo-company-contact { background: #f5f8fc; color: #2b4262; border-color: #d2ddeb; }
+  .milo-erp .milo-panel-card dt { color: #526780; }
+  .milo-erp .milo-panel-card dd { color: #24334b; }
+  .milo-erp .milo-panel-card dl > div { border-color: #dde5ef; }
+  .milo-erp .milo-company-success { background: #e8f5ee; color: #1a5a3d; border-color: #a5cfb8; }
+  .milo-erp .milo-form-error { background: #fff0f1; color: #8c2636; border-color: #e3b2b9; }
+  .milo-erp .milo-signout p { color: #8c2636; }
+  .milo-dashboard { display: grid; grid-template-rows: auto auto minmax(min-content, 1fr) auto auto; min-height: 100%; gap: .75rem; overflow-wrap: anywhere; }
+  .milo-inventory { display: grid; gap: 1.2rem; }
+  .milo-inventory .milo-panel-welcome { padding-bottom: .5rem; }
+  .milo-inventory-quantity { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .milo-inventory select { min-height: 50px; width: 100%; padding: .8rem; border: 1px solid #b9c7da; border-radius: 6px; background: white; color: #1e3555; font: inherit; font-size: .9rem; }
+  .milo-inventory button:disabled { cursor: not-allowed; }
+  .milo-dash-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .2rem; }
+  .milo-dash-heading h1 { font-size: 1.75rem; color: #203654; letter-spacing: -.04em; }
+  .milo-dash-heading .milo-card-kicker { margin-bottom: .2rem; }
+  .milo-dash-heading p:not(.milo-card-kicker) { color: #526780; font-size: .8rem; margin-top: .2rem; line-height: 1.5; }
+  .milo-dash-greeting { color: #4b6383; font-size: .8rem; }
+  .milo-dash-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+  .milo-dash-metric { min-width: 0; display: flex; align-items: flex-start; gap: .65rem; background: #fff; border: 1px solid #dbe4f0; border-radius: 9px; padding: .85rem; box-shadow: 0 4px 14px #20345204; }
+  .milo-dash-metric > div:last-child { min-width: 0; }
+  .milo-dash-metric-icon, .milo-dash-shortcut-icon { background: #eaf1fe; color: #3268b6; width: 42px; height: 42px; display: grid; place-items: center; flex-shrink: 0; border-radius: 9px; }
+  .milo-dash-metric-icon svg, .milo-dash-shortcut svg { width: 22px; height: 22px; }
+  .milo-dash-muted-icon { background: #f0f3f7; color: #657991; }
+  .milo-dash-metric h2 { font-size: .75rem; font-weight: 600; color: #4c607b; line-height: 1.5; }
+  .milo-dash-number { font-size: 1.9rem; font-weight: 700; color: #213a5b; margin-top: .35rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .milo-dash-no-value { font-size: .85rem; font-weight: 600; color: #526780; margin-top: .65rem; }
+  .milo-dash-caption { font-size: .65rem; color: #5c6e85; margin-top: .5rem; line-height: 1.65; }
+  .milo-dash-overview { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); min-height: 15rem; gap: .75rem; }
+  .milo-dash-overview > section { display: flex; flex-direction: column; }
+  .milo-dash-card { background: #fff; border: 1px solid #dbe4f0; border-radius: 9px; min-width: 0; box-shadow: 0 4px 14px #20345204; }
+  .milo-dash-card-header { display: flex; justify-content: space-between; align-items: center; gap: .65rem; padding: .8rem 1rem; border-bottom: 1px solid #e3eaf3; flex-wrap: wrap; }
+  .milo-dash-card-header h2 { font-size: .95rem; color: #294160; letter-spacing: -.02em; }
+  .milo-dash-card-header p { font-size: .7rem; color: #64758c; margin-top: .45rem; }
+  .milo-dash-status { display: inline-block; font-size: .63rem; color: #566b88; background: #edf2f8; padding: .38rem .6rem; border-radius: 5px; }
+  .milo-dash-chart-empty, .milo-dash-sales-empty { flex: 1; min-height: 10rem; padding: .85rem 1rem; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .milo-dash-chart-empty { margin: .65rem; border: 1px dashed #d2ddec; border-radius: 6px; background: #fafcfe; }
+  .milo-dash-empty-icon { color: #6985aa; background: #edf3fb; padding: .55rem; border-radius: 50%; margin-bottom: .55rem; }
+  .milo-dash-empty-icon svg { width: 27px; height: 27px; }
+  .milo-dash-chart-empty h3, .milo-dash-sales-empty h3 { font-size: .95rem; color: #3b5474; }
+  .milo-dash-chart-empty p, .milo-dash-sales-empty p { color: #5f718a; font-size: .76rem; line-height: 1.8; max-width: 320px; margin-top: .6rem; }
+  .milo-dash-chart-empty small { color: #64758c; font-size: .66rem; margin-top: .5rem; line-height: 1.7; }
+  .milo-dash-sales-empty .milo-dash-status { margin-top: .6rem; }
+  .milo-dash-shortcuts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .65rem; padding: .85rem; }
+  .milo-dash-shortcut { display: flex; align-items: center; gap: .6rem; border: 1px solid #dce5f2; padding: .65rem; border-radius: 7px; color: #2b4d7c; font-size: .78rem; min-width: 0; min-height: 44px; }
+  .milo-dash-shortcut > span:nth-child(2), .milo-dash-account > div:first-child > div { min-width: 0; }
+  .milo-dash-shortcut > span:last-child { margin-left: auto; }
+  .milo-dash-shortcut:hover { background: #f1f6ff; border-color: #8dabd6; }
+  .milo-dash-shortcut-icon { width: 34px; height: 34px; border-radius: 6px; }
+  .milo-dash-access-empty { padding: 1.5rem; color: #526780; font-size: .8rem; line-height: 1.8; }
+  .milo-dash-account { display: flex; justify-content: space-between; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding: .5rem; }
+  .milo-dash-account > div:first-child { display: flex; gap: .8rem; align-items: center; min-width: 0; }
+  .milo-dash-account strong { font-size: .77rem; color: #385270; }
+  .milo-dash-account p { color: #5c708b; font-size: .7rem; margin-top: .3rem; overflow-wrap: anywhere; }
+  .milo-dash-account-avatar { display: grid; place-items: center; width: 36px; height: 36px; background: #dfe8f5; color: #315d94; border-radius: 50%; font-weight: 700; flex-shrink: 0; }
+  .milo-dash-account-roles { display: flex; gap: .5rem; flex-wrap: wrap; font-size: .75rem; }
+  @media (max-width: 1500px) { .milo-dash-shortcuts { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 1250px) { .milo-dash-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 1000px) { .milo-dash-overview { grid-template-columns: 1fr; } .milo-dash-shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 860px) {
+    .milo-erp, .milo-erp[data-collapsed="true"] { display: flex; flex-direction: column; }
+    .milo-erp .milo-panel-body { flex: 1; }
+    .milo-dashboard { min-height: 0; grid-template-rows: none; }
+    .milo-erp .milo-sidebar { flex-shrink: 0; position: relative; height: auto; max-height: 60dvh; padding: .75rem 1.1rem; border-right: 0; border-bottom: 1px solid #35455e; }
+    .milo-erp .milo-sidebar-heading { display: flex; align-items: center; justify-content: space-between; padding: 0; }
+    .milo-erp .milo-mobile-menu { display: inline-flex; }
+    .milo-erp .milo-sidebar-body[data-open="false"] { display: none; }
+    .milo-erp .milo-sidebar-body[data-open="true"] { display: flex; }
+    .milo-erp #panel-navigation { overflow: visible; }
+    .milo-erp .milo-sidebar-footer { padding-top: .8rem; }
+    .milo-erp .milo-erp-collapse { display: none; }
+    .milo-erp .milo-topbar { position: static; padding: 1.1rem 1.25rem; gap: 1rem; }
+    .milo-erp .milo-panel-content { padding: 1rem 1.1rem; }
+    .milo-erp .milo-account-name { max-width: 9rem; }
+    .milo-erp .milo-topbar-account { gap: .5rem; }
+    .milo-dash-heading { flex-wrap: wrap; }
+    .milo-dash-greeting { font-size: .73rem; }
+  }
+  @media (max-width: 520px) {
+    .milo-dash-metrics, .milo-dash-shortcuts { grid-template-columns: 1fr; }
+    .milo-dash-metric { padding: 1.1rem; }
+    .milo-erp .milo-topbar { flex-wrap: wrap; }
+    .milo-erp .milo-panel-card { padding: 1.15rem; }
+    .milo-dash-card-header { padding: 1.1rem; }
+    .milo-erp .milo-topbar-account { flex-wrap: wrap; flex-shrink: 1; }
+    .milo-erp .milo-panel-footer { gap: .4rem; padding-inline: 1.1rem; }
+  }
+}

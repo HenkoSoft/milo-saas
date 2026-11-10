@@ -1,0 +1,42 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useRef, useState, type ReactNode } from "react";
+import { Brand } from "@/components/brand";
+import { CapabilityIcon } from "@/components/icons";
+import { SignOutButton } from "@/components/auth/sign-out-button";
+import { isActiveRoute, panelNavigation, type PanelNavItem } from "@/lib/panel/navigation";
+
+type Group = Extract<PanelNavItem, { kind: "group" }>;
+function NavGroup({ item, path, collapsed, expandSidebar, navigate }: { item: Group; path: string; collapsed: boolean; expandSidebar: () => void; navigate: () => void }) {
+  const active = item.links.some(link => isActiveRoute(path, link.href));
+  const [open, setOpen] = useState(active);
+  const id = item.label === "Artículos" ? "panel-articles" : "panel-administration";
+  return <li className="milo-erp-group"><button type="button" className={`milo-erp-nav-item${active ? " milo-erp-section-active" : ""}`} aria-expanded={open && !collapsed} aria-controls={id} title={item.label} onClick={() => { if (collapsed) { expandSidebar(); setOpen(true); } else setOpen(!open); }}><CapabilityIcon kind={item.icon} /><span className="milo-erp-nav-label">{item.label}</span><span className="milo-erp-chevron" aria-hidden="true">{open && !collapsed ? "−" : "+"}</span></button>
+    <ul id={id} className="milo-erp-submenu" hidden={!open || collapsed}>{item.links.map(link => <li key={link.href}><Link className={isActiveRoute(path, link.href) ? "milo-erp-sub-active" : ""} href={link.href} aria-current={isActiveRoute(path, link.href) ? "page" : undefined} onClick={navigate}>{link.label}</Link></li>)}</ul>
+  </li>;
+}
+
+export function PanelShell({ children, companyName, userName, scopeLabel, canManageCompany, canManageCatalog, canManageBranches, canReadInventory }: {
+  children: ReactNode; companyName: string; userName: string; scopeLabel: string; canManageCompany: boolean; canManageCatalog: boolean; canManageBranches: boolean; canReadInventory: boolean;
+}) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const mobileToggle = useRef<HTMLButtonElement>(null);
+  const pathname = usePathname();
+  const items = panelNavigation({ company: canManageCompany, catalog: canManageCatalog, branches: canManageBranches, inventory: canReadInventory });
+  const current = items.flatMap(item => item.kind === "group" ? item.links : item.kind === "link" ? [item] : []).find(link => isActiveRoute(pathname, link.href))?.label ?? "Panel";
+  return <div className="milo-panel milo-erp" data-collapsed={collapsed}>
+    <a className="skip-link" href="#panel-content">Saltar al contenido</a>
+    <aside className="milo-sidebar" aria-label="Menú principal" onKeyDown={event => { if (event.key === "Escape" && mobileOpen) { setMobileOpen(false); mobileToggle.current?.focus(); } }}>
+      <div className="milo-sidebar-heading"><div className="milo-erp-brand"><Brand /><span>Powered by HenkoSoft</span></div><button ref={mobileToggle} className="milo-mobile-menu milo-erp-menu-button" type="button" aria-expanded={mobileOpen} aria-controls="panel-navigation" onClick={() => { setCollapsed(false); setMobileOpen(!mobileOpen); }}>{mobileOpen ? "Cerrar menú" : "Menú"}<span aria-hidden="true">{mobileOpen ? "×" : "☰"}</span></button></div>
+      <div className="milo-sidebar-body" data-open={mobileOpen}>
+        <div className="milo-workspace"><span className="milo-workspace-mark" aria-hidden="true">M</span><div><small>EMPRESA</small><p>{companyName}</p><span className="milo-erp-scope">{scopeLabel}</span></div></div>
+        <nav id="panel-navigation" aria-label="Navegación del panel"><p className="milo-nav-label">MENÚ PRINCIPAL</p><ul className="milo-erp-navigation">{items.map(item => item.kind === "group" ? <NavGroup key={`${item.label}:${pathname}`} item={item} path={pathname} collapsed={collapsed} expandSidebar={() => setCollapsed(false)} navigate={() => setMobileOpen(false)} /> : <li key={item.label}>{item.kind === "link" ? <Link className={`milo-erp-nav-item${isActiveRoute(pathname, item.href) ? " milo-erp-section-active" : ""}`} href={item.href} aria-current={isActiveRoute(pathname, item.href) ? "page" : undefined} title={item.label} onClick={() => setMobileOpen(false)}><CapabilityIcon kind={item.icon} /><span className="milo-erp-nav-label">{item.label}</span></Link> : <button className="milo-erp-nav-item milo-erp-pending" disabled type="button" title={`${item.label}: próximamente`}><CapabilityIcon kind={item.icon} /><span className="milo-erp-nav-label">{item.label}</span><small className="milo-erp-soon">Próximamente</small></button>}</li>)}</ul></nav>
+        <div className="milo-sidebar-footer"><button className="milo-erp-collapse milo-erp-menu-button" type="button" aria-label={collapsed ? "Expandir menú lateral" : "Contraer menú lateral"} aria-expanded={!collapsed} aria-controls="panel-navigation" onClick={() => setCollapsed(!collapsed)}><span aria-hidden="true">{collapsed ? "»" : "«"}</span><span className="milo-erp-nav-label">Contraer menú</span></button><small className="milo-erp-nav-label">MILO · Gestión empresarial</small></div>
+      </div>
+    </aside>
+    <div className="milo-panel-body"><header className="milo-topbar"><div className="milo-erp-top-context"><span className="milo-topbar-label">ESPACIO DE TRABAJO / {current}</span><p>{companyName}</p><small>{scopeLabel}</small></div><div className="milo-topbar-account"><div className="milo-account-name"><small>SESIÓN ACTIVA</small><span>{userName}</span></div><SignOutButton /></div></header><main id="panel-content" tabIndex={-1} className="milo-panel-content">{children}</main><footer className="milo-panel-footer"><span>MILO · Gestión empresarial</span><span>Powered by HenkoSoft</span></footer></div>
+  </div>;
+}

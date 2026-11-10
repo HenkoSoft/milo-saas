@@ -22,6 +22,19 @@
 /build
 
 # misc
+/.local/
+/backups/
+*.dump
+*.backup
+*.bak
+*.sql.gz
+*.sql.zip
+*.pgpass
+pgpass.conf
+*.pfx
+*.p12
+*.key
+*.tmp
 .DS_Store
 *.pem
 

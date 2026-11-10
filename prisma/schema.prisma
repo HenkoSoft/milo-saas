@@ -8,6 +8,14 @@ enum PriceVisibility {
   AUTHENTICATED_CUSTOMERS
 }
 
+enum StorefrontTemplate {
+  WHOLESALE
+}
+
+enum StorefrontRegistrationPolicy {
+  MANUAL
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -112,8 +120,28 @@ model Tenant {
   stockBalances          StockBalance[]
   stockMovements         StockMovement[]
   auditEvents            AuditEvent[]
+  storefront             TenantStorefront?
 
   @@map("tenants")
+}
+
+// Editorial persistence only. Publication and authorization are future server use cases.
+// Additional invariants are CHECK constraints in the additive SQL migration.
+model TenantStorefront {
+  tenantId           String                       @id @db.Uuid
+  slug               String                       @unique @db.VarChar(63)
+  template           StorefrontTemplate           @default(WHOLESALE)
+  registrationPolicy StorefrontRegistrationPolicy @default(MANUAL)
+  draft              Json                         @db.JsonB
+  published          Json?                        @db.JsonB
+  publishedAt        DateTime?                    @db.Timestamptz(6)
+  revision           Int                          @default(1)
+  createdAt          DateTime                     @default(now()) @db.Timestamptz(6)
+  updatedAt          DateTime                     @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@map("tenant_storefronts")
 }
 
 model UserProfile {
@@ -463,6 +491,8 @@ model StockMovement {
   productId     String   @db.Uuid
   movementType  String
   quantityDelta Decimal  @db.Decimal(18, 3)
+  reason        String?  @db.VarChar(1000)
+  sourceReference String? @db.VarChar(200)
   sourceOrderId String?  @db.Uuid
   actorUserId   String   @db.Uuid
   occurredAt    DateTime @default(now()) @db.Timestamptz(6)

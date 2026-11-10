@@ -16,6 +16,27 @@ const prisma = Object.fromEntries(
         calls.push({ model, args });
         return rows.get(model) ?? null;
       },
+      async findMany(args) {
+        calls.push({ model, args });
+        const row = rows.get(model);
+        return row ? [row] : [];
+      },
+      async create(args) {
+        calls.push({ model, args });
+        rows.set(model, args.data);
+        return args.data;
+      },
+      async deleteMany(args) {
+        calls.push({ model, args });
+        const deleted = rows.delete(model);
+        return { count: deleted ? 1 : 0 };
+      },
+      async delete(args) {
+        calls.push({ model, args });
+        const row = rows.get(model);
+        rows.delete(model);
+        return row;
+      },
     },
   ]),
 );
@@ -82,6 +103,62 @@ test("all four model names resolve to the expected Prisma delegates", async () =
     await context.adapter.findOne({ model, where: [{ field: "id", value: "test-id" }] });
     assert.equal(calls.length, 1);
     assert.equal(calls[0].model, delegate);
+  }
+});
+
+test("real email/password handler signs in, issues a cookie and sign-out invalidates the in-memory session", async () => {
+  const { hashPassword } = await import("better-auth/crypto");
+  const now = new Date();
+  const account = {
+    id: "memory-account", userId: "memory-identity", accountId: "memory-identity",
+    providerId: "credential", password: await hashPassword("memory-only-password"),
+    createdAt: now, updatedAt: now,
+  };
+  rows.set("authUser", {
+    id: "memory-identity", name: "Memory only", email: "memory@example.invalid",
+    emailVerified: false, image: null, createdAt: now, updatedAt: now,
+  });
+  rows.set("authAccount", account);
+  calls.length = 0;
+  try {
+    const response = await route.POST(new Request("http://localhost:3000/api/auth/sign-in/email", {
+      method: "POST", headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+      body: JSON.stringify({ email: "memory@example.invalid", password: "memory-only-password", rememberMe: false }),
+    }));
+    assert.equal(response.status, 200);
+    const cookieHeader = response.headers.getSetCookie().find(cookie => cookie.startsWith("better-auth.session_token="));
+    assert.ok(cookieHeader);
+    assert.match(cookieHeader, /HttpOnly/i);
+    assert.equal((await response.json()).user.id, "memory-identity");
+    const cookie = cookieHeader.split(";")[0];
+    const active = await route.GET(new Request("http://localhost:3000/api/auth/get-session?disableRefresh=true", { headers: { cookie } }));
+    assert.equal(active.status, 200);
+    assert.equal((await active.json()).user.id, "memory-identity");
+    const signedOut = await route.POST(new Request("http://localhost:3000/api/auth/sign-out", {
+      method: "POST", headers: { cookie, origin: "http://localhost:3000", "content-type": "application/json" }, body: "{}",
+    }));
+    assert.equal(signedOut.status, 200);
+    assert.equal(rows.has("authSession"), false);
+    const revoked = await route.GET(new Request("http://localhost:3000/api/auth/get-session?disableRefresh=true", { headers: { cookie } }));
+    assert.equal(await revoked.json(), null);
+    assert.ok(calls.every(({ model }) => ["authUser", "authAccount", "authSession"].includes(model)));
+  } finally {
+    rows.clear();
+  }
+});
+
+test("malformed and invalid credentials are rejected by the real sign-in handler", async () => {
+  rows.clear();
+  for (const [body, expected] of [
+    [{ email: "not-an-email", password: "invalid" }, 400],
+    [{ email: "unknown@example.invalid", password: "wrong-memory-password" }, 401],
+  ]) {
+    const response = await route.POST(new Request("http://localhost:3000/api/auth/sign-in/email", {
+      method: "POST", headers: { "content-type": "application/json", origin: "http://localhost:3000" }, body: JSON.stringify(body),
+    }));
+    assert.equal(response.status, expected);
+    assert.equal(response.headers.getSetCookie().some(cookie => cookie.startsWith("better-auth.session_token=")), false);
+    if (expected === 401) assert.equal((await response.json()).code, "INVALID_EMAIL_OR_PASSWORD");
   }
 });
 

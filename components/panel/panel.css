@@ -1,0 +1,111 @@
+@layer components {
+  .milo-panel { display: grid; grid-template-columns: 254px minmax(0, 1fr); min-height: 100dvh; background: #0b1018; }
+  .milo-sidebar { background: #101722; border-right: 1px solid #283345; padding: 2rem 1.25rem; position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; }
+  .milo-sidebar-heading { padding-inline: .6rem; }
+  .milo-sidebar-body { display: flex; flex-direction: column; flex: 1; }
+  .milo-workspace { display: flex; align-items: center; gap: .7rem; background: #182231; border: 1px solid #303d51; border-radius: 8px; padding: .85rem; margin-block: 2.5rem; min-width: 0; }
+  .milo-workspace-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 6px; background: #2e5baf; color: #ecf2ff; font-weight: 800; flex-shrink: 0; }
+  .milo-workspace small { display: block; font-size: .5rem; letter-spacing: .12em; color: #92a4bf; margin-bottom: .3rem; }
+  .milo-workspace p { font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+  .milo-nav-label { color: #92a1b6; font-size: .55rem; letter-spacing: .13em; margin: 0 .7rem 1rem; }
+  .milo-panel .milo-nav-link { display: flex; align-items: center; gap: .8rem; padding: .8rem; margin-bottom: .5rem; border: 1px solid transparent; border-radius: 6px; font-size: .85rem; color: #aebed5; }
+  .milo-panel .milo-nav-link:hover { background: #1c2a3e; color: #edf3ff; }
+  .milo-panel .milo-nav-active { border-color: #355794; background: #20385e; color: #e3edff; }
+  .milo-nav-link .capability-icon { width: 19px; height: 19px; }
+  .milo-nav-link > span { margin-left: auto; color: #a4c3ff; }
+  .milo-sidebar-footer { margin-top: auto; padding: 2rem .6rem 0; display: grid; gap: .7rem; color: #9caec5; font-size: .65rem; }
+  .milo-sidebar-footer small { font-size: .52rem; letter-spacing: .12em; color: #8495af; }
+  .milo-panel-body { min-width: 0; display: flex; flex-direction: column; }
+  .milo-topbar { min-height: 92px; border-bottom: 1px solid #283345; padding: 1.3rem 2.6rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; background: #101722; }
+  .milo-topbar-label { font-size: .52rem; letter-spacing: .15em; color: #8fa3c0; }
+  .milo-topbar p { font-size: .9rem; margin-top: .35rem; }
+  .milo-topbar-account { display: flex; align-items: center; gap: 1.2rem; }
+  .milo-account-name { max-width: 200px; overflow-wrap: anywhere; font-size: .8rem; color: #c6d3e6; }
+  .milo-panel-content { padding: 3rem clamp(1.5rem, 3.5vw, 4rem); max-width: 1400px; width: 100%; margin-inline: auto; flex: 1; }
+  .milo-panel-welcome { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 2.6rem; }
+  .milo-panel-welcome h1 { font-size: clamp(1.9rem, 3vw, 3rem); letter-spacing: -.055em; line-height: 1.2; overflow-wrap: anywhere; }
+  .milo-panel-welcome p:not(.milo-card-kicker) { color: #a5b4ca; line-height: 1.8; margin-top: 1rem; font-size: .9rem; }
+  .milo-panel-welcome strong { color: #d6e0ee; font-weight: 500; }
+  .milo-welcome-symbol { color: #9ab7e2; border: 1px solid #3a4c65; background: linear-gradient(145deg, #1d314f, #111c2c); width: 80px; height: 80px; border-radius: 18px; display: grid; place-items: center; font-size: 2.3rem; font-weight: 800; flex-shrink: 0; }
+  .milo-panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+  .milo-panel-card { border: 1px solid #303c4f; border-radius: 12px; padding: 1.8rem; background: #131c29; min-width: 0; }
+  .milo-panel-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: #90a6c7; }
+  .milo-panel-card-heading svg { width: 23px; height: 23px; }
+  .milo-panel-card-heading > span { font-size: .52rem; letter-spacing: .13em; }
+  .milo-panel-card h2 { font-size: 1.2rem; letter-spacing: -.025em; margin-block: 1.4rem; }
+  .milo-panel-card dl { margin: 0; }
+  .milo-panel-card dl > div { padding-block: .85rem; border-top: 1px solid #2b3749; }
+  .milo-panel-card dt { font-size: .68rem; color: #9aaec9; margin-bottom: .4rem; }
+  .milo-panel-card dd { margin: 0; color: #dee7f5; font-size: .88rem; line-height: 1.6; overflow-wrap: anywhere; }
+  .milo-role-list { list-style: none; padding: 0; margin: 0; }
+  .milo-role-list li { border-top: 1px solid #2b3749; padding-block: 1rem; display: grid; gap: .7rem; font-size: .8rem; line-height: 1.6; color: #b4c3d9; overflow-wrap: anywhere; }
+  .milo-role-badge { color: #bcd3ff; background: #223b62; border: 1px solid #3b5887; border-radius: 5px; padding: .25rem .6rem; justify-self: start; font-size: .72rem; }
+  .milo-empty-roles { font-size: .85rem; color: #acbdd5; line-height: 1.8; }
+  .milo-panel-note { display: flex; gap: 1.2rem; padding: 1.5rem; border: 1px dashed #3b4b63; border-radius: 10px; margin-top: 1.5rem; background: #101926; }
+  .milo-panel-note svg { width: 24px; height: 24px; color: #a5bfe5; flex-shrink: 0; }
+  .milo-panel-note h2 { font-size: .95rem; margin-bottom: .6rem; }
+  .milo-panel-note p { font-size: .8rem; line-height: 1.8; color: #9fadc2; }
+  .milo-panel-footer { padding: 1.5rem 2.6rem; display: flex; justify-content: space-between; gap: 1rem; color: #8c9cb2; font-size: .6rem; border-top: 1px solid #263244; }
+  .milo-mobile-menu { display: none; }
+  .milo-catalog-title { font-size: clamp(1.6rem, 3vw, 2.5rem); }
+  .milo-product-heading { margin-bottom: 1.4rem; }
+  .milo-product-heading h2 { margin-bottom: .45rem; }
+  .milo-product-quick .milo-field { margin-bottom: 1rem; }
+  .milo-product-price-row { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.2rem; padding-block: 1.2rem .2rem; border-top: 1px solid #344158; }
+  .milo-product-price-row input { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+  .milo-product-advanced { margin-top: 1.4rem; border: 1px solid #344158; border-radius: .8rem; background: #121b2a; }
+  .milo-product-advanced > summary { padding: 1rem 1.2rem; cursor: pointer; color: #bed4fa; font-weight: 600; }
+  .milo-product-advanced-body { padding: .4rem 1.2rem 1.2rem; }
+  .milo-product-advanced > summary:focus-visible { outline: 2px solid #96bfff; outline-offset: 3px; }
+  .milo-presentation-new { margin-top: 1.4rem; border-top: 1px solid #344158; padding-top: 1rem; }
+  .milo-presentation-new summary { cursor: pointer; color: #a9c8ff; padding-block: .6rem; font-size: .9rem; }
+  .milo-presentation-body { display: grid; gap: 1.7rem; margin-top: 1.3rem; }
+  .milo-presentation-card { margin-top: 1.3rem; }
+  .milo-presentation-card h3 { font-size: 1.1rem; overflow-wrap: anywhere; }
+  .milo-presentation-price { border-top: 1px solid #344158; padding-top: 1.4rem; }
+  .milo-presentation-body label > input, .milo-presentation-body label > select { margin-top: .6rem; }
+  .milo-catalog-form { display: grid; gap: 1.4rem; }
+  .milo-catalog-fields { display: grid; gap: 1.4rem; border: 0; padding: 0; margin: 0; min-width: 0; }
+  .milo-catalog-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  .milo-catalog-form select, .milo-catalog-form textarea { width: 100%; min-width: 0; border: 1px solid #40506a; border-radius: 6px; padding: .85rem 1rem; background: #0c111a; color: #edf3ff; font: inherit; font-size: .9rem; min-height: 48px; }
+  .milo-catalog-form textarea { resize: vertical; line-height: 1.7; }
+  .milo-catalog-form fieldset:disabled { opacity: .6; }
+  .milo-catalog-search { display: flex; align-items: end; gap: .8rem; flex-wrap: wrap; }
+  .milo-catalog-search .milo-field { flex: 1; min-width: min(100%, 180px); }
+  .milo-catalog-table-wrap { overflow-x: auto; margin-top: 1rem; }
+  .milo-catalog-table { width: 100%; text-align: left; border-collapse: collapse; font-size: .85rem; }
+  .milo-catalog-table th { font-size: .68rem; color: #a4b9d7; font-weight: 600; padding: 1rem .8rem; border-bottom: 1px solid #3d4d65; }
+  .milo-catalog-table td { padding: 1rem .8rem; border-bottom: 1px solid #29364a; vertical-align: top; overflow-wrap: anywhere; max-width: 400px; }
+  .milo-catalog-table td > span:not(.milo-role-badge) { display: block; margin-top: .4rem; color: #afbed3; }
+  .milo-catalog-table td a { display: inline-block; color: #a9c8ff; min-height: 40px; padding-block: .4rem; white-space: nowrap; }
+  .milo-catalog-empty { padding: 2rem 0; color: #aebed5; font-size: .9rem; line-height: 1.8; }
+  .milo-catalog-pagination { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-top: 1.5rem; color: #a9bad3; font-size: .75rem; }
+  .milo-catalog-pagination > div { display: flex; gap: .8rem; }
+  .milo-company-form { display: grid; gap: 1.2rem; }
+  .milo-company-form-actions { display: flex; gap: .8rem; flex-wrap: wrap; }
+  .milo-company-form-actions .milo-primary-button { min-width: 190px; }
+  .milo-company-hint { color: #aebbd0; font-size: .78rem; line-height: 1.8; display: block; margin-top: .6rem; }
+  .milo-company-success { color: #c2e8d8; background: #183b31; border: 1px solid #416d5e; padding: .85rem 1rem; border-radius: 6px; font-size: .85rem; line-height: 1.7; }
+  .milo-company-readonly { margin-top: 1.4rem; }
+  .milo-company-address { white-space: pre-wrap; }
+  .milo-company-contact { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 350px; overflow-y: auto; background: #0c1420; padding: 1rem; border: 1px solid #314057; border-radius: 6px; font-size: .8rem; margin-top: .8rem; }
+  .milo-company-readonly summary { cursor: pointer; color: #b8d1ff; }
+  @media (max-width: 1000px) { .milo-panel-grid { grid-template-columns: 1fr; } .milo-panel { grid-template-columns: 220px minmax(0, 1fr); } }
+  @media (max-width: 760px) {
+    .milo-catalog-form-grid, .milo-product-price-row { grid-template-columns: 1fr; }
+    .milo-panel-welcome { flex-wrap: wrap; }
+    .milo-panel { display: block; }
+    .milo-sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid #283345; padding: 1rem 1.25rem; }
+    .milo-sidebar-heading { display: flex; justify-content: space-between; align-items: center; padding: 0; }
+    .milo-mobile-menu { display: inline-flex; }
+    .milo-sidebar-body[data-open="false"] { display: none; }
+    .milo-workspace { margin-block: 1.5rem; }
+    .milo-sidebar-footer { padding-block: 1.5rem .5rem; }
+    .milo-topbar { padding: 1rem 1.25rem; min-height: 82px; }
+    .milo-account-name { display: none; }
+    .milo-panel-content { padding: 2rem 1.25rem; }
+    .milo-welcome-symbol { display: none; }
+    .milo-panel-card { padding: 1.4rem; }
+    .milo-panel-footer { padding-inline: 1.25rem; flex-wrap: wrap; }
+  }
+}

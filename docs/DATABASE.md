@@ -1,5 +1,57 @@
 # Diseño conceptual de datos multi-tenant
 
+> D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
+
+> D-038: `100.000,00` es el formato obligatorio de interfaz para todos los importes actuales y futuros. La persistencia mantiene decimales exactos y moneda según el modelo existente; no guarda separadores localizados ni cambia esquema, precisión o datos. Ver [MONEY_FORMAT.md](MONEY_FORMAT.md).
+
+> D-034: la investigación del ingreso fallido confirmó con READ ONLY cero movimientos, saldos y auditorías de inventario de Milo Store en ese momento. La estructura migrada era correcta; el fallo provenía de un cliente antiguo en memoria. Se corrigió la caché de aplicación y el diagnóstico, sin SQL de escritura, regeneración o cambios de esquema/migraciones. Ver DECISIONS.md.
+
+> Estado D-033, 2026-11-10: aplicada exclusivamente `20261109220000_add_inventory_manual_trace` a milo_dev tras respaldo verificable y comprobación de compatibilidad. Dos columnas nullable y dos CHECK validados; cuatro migraciones al día, diff Prisma vacío y datos anteriores de las 27 tablas conservados. No hubo cambios en otras tablas salvo la entrada estándar del historial Prisma. Las referencias siguientes a migración pendiente describen la preparación. Ver DECISIONS.md para respaldo/evidencia.
+
+### Inventario manual y migración pendiente (D-033)
+
+Preparada, sin aplicar a milo_dev, la migración `20261109220000_add_inventory_manual_trace`: agrega reason VARCHAR(1000), sourceReference VARCHAR(200) nullable y CHECKs acotados a MANUAL_RECEIPT/MANUAL_ADJUSTMENT. Conserva historial, PK UUID, FKs y triggers append-only/no negativo; no crea documentos ni reinterpreta sourceOrderId. Operaciones con Decimal exacto, incremento firmado y movimiento/auditoría en transacción bajo lock Product; UUID estable evita duplicados y permite reconciliar commits inciertos. Verificados ingreso, ajuste, idempotencia, aislamiento, concurrencia y rollback en PostgreSQL temporal, eliminada con fingerprints coincidentes. Escrituras bloqueadas donde falten campos/CHECK validados; milo_dev intacto. Ver D-033.
+
+### Agregados de lectura del dashboard (D-032)
+
+Sin DDL ni escrituras. Total clientes = COUNT de Customer del tenant, todos los estados; no implica cliente aprobado. Total productos = COUNT de Product del tenant, publicados y no publicados. Solo OWNER/ADMIN COMPANY, con membresía revalidada y lecturas RepeatableRead; errores no se convierten en cero. No se agregan pedidos como ventas, montos, estados comerciales nuevos o filtros de una sucursal activa inexistente. Pruebas del transporte simuladas. Ver D-032.
+
+### Uso administrativo de Branch (D-031)
+
+Sin DDL/migraciones ni datos nuevos durante la implementación. Branch se crea con tenantId resuelto en servidor y nombre; solo name/updatedAt pueden actualizarse, con comparación de versión y auditoría en una transacción Serializable. No se inventa unicidad de nombre. FKs tenant-aware/RESTRICT de Tenant, UserRoleAssignment, WholesaleOrder, StockBalance y StockMovement permanecen intactas. No hay borrado ni escrituras en tablas relacionadas. Persistencia/rollback probados en memoria, sin integración PostgreSQL de esta etapa. Ver D-031.
+
+### Persistencia de carga rápida (D-030)
+
+Sin DDL ni cambios de datos durante la implementación. El nuevo flujo guarda ficha, presentación individual UN/COUNT factor 1 y precio explícito en una transacción ReadCommitted con auditoría atómica. Unidad/dimensión y moneda se validan desde la base; en edición se bloquea Product y la presentación elegida, se controlan los tres updatedAt y se preservan identidad e historial. Un precio cero explícito se distingue de ausencia de precio. Las configuraciones ambiguas o especiales se conservan para edición avanzada. No se escriben StockBalance/StockMovement ni se migran productos existentes. Pruebas nuevas solo con transporte en memoria. Ver D-030.
+
+### Persistencia administrativa de marcas y presentaciones (D-029)
+
+Sin cambios de esquema/migraciones. Brand, ProductPresentation y WholesalePrice se escriben con allowlists tenant-scoped, control de versión y AuditEvent mínimo en la misma transacción. FKs compuestas de producto/unidad/dimensión y factor positivo conservados. Presentaciones con historial mantienen su identidad; bloqueo Product→ProductPresentation coordina lectura de historial y escritura bajo ReadCommitted, con tiempo de espera acotado. Precio separado con moneda real comprobada y sin valor implícito; se conserva exactitud Decimal(18,2)/(18,3). Pruebas de persistencia/rollback en memoria, sin escrituras en milo_dev ni verificación de integración PostgreSQL de este módulo. Ver D-029; supera la lectura exclusiva de D-027.
+
+> D-028: cargadas y verificadas en milo_dev únicamente las unidades compartidas `UN / Unidad / COUNT` y `M / Metro / LENGTH`, en una transacción Prisma y sin sobrescrituras. Tres migraciones al día; demás tablas y datos existentes sin cambios. No hubo cambios de esquema. Las referencias a cero unidades corresponden al estado previo.
+
+### Catálogo administrativo inicial (D-027)
+
+Sin cambios de esquema o migraciones. Categorías y productos se crean/editan con tenantId derivado en servidor, FKs tenant-aware, unicidad SKU por tenant, concurrencia por updatedAt y auditoría en la misma transacción Serializable. Solo cambian metadatos autorizados; base/dimensión/fraccionamiento existentes, presentaciones, precios y tablas históricas permanecen intactos. Prisma Decimal se serializa con escala 3/2 sin Number ni cálculos. No hay eliminación. La inspección de lectura encontró cero unidades compartidas en milo_dev; no se cargaron unidades ni productos ficticios. Pruebas de persistencia/rollback simuladas, sin escrituras sobre datos reales.
+
+### Configuración de empresa funcional (D-026)
+
+Sin cambios de esquema/migraciones. commercialName opcional se edita mediante una transacción Serializable tenant-scoped con control optimista por updatedAt. Se registra AuditEvent con actor del mismo tenant, action TENANT_COMMERCIAL_NAME_UPDATED y referencia lógica al Tenant actualizado; sin copiar datos de contacto o valores comerciales. Un fallo del evento revierte la actualización. Dirección/contactData conservan sus contratos pendientes y no se escriben; moneda/locale/zona/priceVisibility solo se consultan. Pruebas de persistencia/rollback del módulo realizadas en memoria, sin alterar milo_dev.
+
+> D-025, 2026-11-09: activación inicial completada en milo_dev con un tenant, una identidad/cuenta credential, un perfil y una asignación OWNER/COMPANY sin sucursal. Solo se añadió la definición OWNER faltante. Journal committed, dry-run complete y sin cambios ajenos al alta autorizada; esquema/migraciones intactos. Las referencias a preparación sin datos son históricas.
+
+### Preparación local de activación (D-024)
+
+El [CLI de activación](../scripts/activation/README.md) valida destino local milo_dev, PostgreSQL 17, historial/checksums de las tres migraciones y restricciones relevantes con una conexión read-only. Sobre milo_dev se ejecutó únicamente dry-run: ready, sin intento previo, sin cambios de esquema o datos. El rollback real de la transacción Serializable pasó en las cuatro etapas sobre una base temporal autorizada, migrada, verificada vacía y eliminada. Se comprobó el mismo xid/pid en las escrituras Better Auth. Respaldo de milo_dev actualizado y verificado; activación real aún no ejecutada.
+
+> Estado actualizado D-023: `/acceso` ofrece ingreso real por correo/contraseña y `/panel` tiene estructura protegida empresarial. Solo se muestran cuenta, empresa y asignaciones reales autorizadas. Sin registro público, invitaciones, métricas ficticias ni módulos comerciales operativos. TenantStorefront permanece aplicado, sin integración editorial. Las referencias anteriores a ingreso informativo o login pendiente describen etapas previas.
+
+## Persistencia editorial preparada (D-022)
+
+`TenantStorefront` usa tenantId UUID como PK/FK RESTRICT a tenants; la relación inversa es opcional y no agrega una columna a tenants. Slug VARCHAR(63) único global, enums WHOLESALE/MANUAL, draft JSONB obligatorio, published JSONB y publishedAt opcionales, revision inicial 1 positiva y timestamps según convención. Cinco CHECK cubren slug ASCII canónico, revisión positiva, ambos documentos objeto y pareja de publicación coherente. No hay datos ni defaults de contenido editorial.
+
+La migración `20261109150000_add_tenant_storefront` compara el schema anterior con el nuevo, ambos locales; solo crea enums, tabla, índice y restricciones de la nueva tabla. No se modificaron migraciones previas; la nueva migración se aplicó con autorización expresa. Los CHECK se añadieron al SQL porque Prisma no los expresa en el schema. Historial, checksums, drift y CHECK verificados en la aplicación controlada de D-022. Ver [contrato y publicación previstos](DATA_MODEL_V1.md#tenantstorefront--preparación-de-persistencia-editorial-d-022) y [procedencia del SQL](../prisma/migrations/20261109150000_add_tenant_storefront/README.md).
+
 > Estado público vigente (D-021): MILO es la plataforma de HenkoSoft. Sitio institucional multipágina en `/`; Milo Store en `/tiendas/milo-store`; `/acceso` solo informa el estado del ingreso. Sin nuevos módulos, pantallas privadas ni cambios de datos. Las referencias históricas a una única landing quedan reemplazadas por esta estructura.
 
 ## Estado
@@ -130,3 +182,23 @@ StockMovement rechaza UPDATE, DELETE y TRUNCATE. OrderLine permanece editable/el
 ### Storefront editorial reutilizable (D-021, fases 2 y 3)
 
 El portal /tiendas/milo-store ahora se sirve mediante app/(comercial)/tiendas/[slug], con plantilla mayorista y componentes comerciales reutilizables. Solo existe la entrada editorial milo-store; no corresponde a una creación, carga o consulta de Tenant. Personalización visual acotada al storefront y panel con identidad global de MILO. No cambian el esquema, los permisos, el alcance mayorista ni el acceso comercial.
+
+### D-022 — Aplicación controlada verificada
+
+El 2026-11-09 se confirmó la conexión a `127.0.0.1:5432/milo_dev` (PostgreSQL 17.11), las dos migraciones anteriores completas con checksums coincidentes y una única pendiente. Por autorización expresa se añadió BEGIN/COMMIT con lock_timeout=10s y statement_timeout=60s a la migración pendiente, conservando su DDL y cinco CHECK. Prisma 7.10.1 ejecutó únicamente add_tenant_storefront mediante migrate deploy.
+
+Respaldo completo: evidencia local no versionada (84.775 bytes); pg_dump -Fc 17.11, pg_restore --list (191 entradas) y lectura completa sin restaurar, todos correctos. SHA-256: `d07f4fd25762bd24e0c7c8ef3cedbaf2e94532b405907922d1bec7c2c17d90a8`. Evidencia técnica en archivos .audit.json y .verified.json del mismo nombre base fuera del repositorio.
+
+Verificados tabla vacía, dos enums, PK/índice único de slug, FK RESTRICT y cinco CHECK validados. Historial anterior intacto y huellas de esquema/datos de las 25 tablas previas coincidentes, incluidas las cuatro tablas Better Auth. migrate status al día, prisma validate correcto y diff real/schema vacío. Sin crear usuarios, tenants ni datos comerciales ni modificar .env, Docker o Better Auth. La edición/publicación de storefront y su autorización efectiva siguen pendientes.
+
+## Ingreso y panel empresarial (D-023)
+
+Implementado por autorización expresa: formulario real en /acceso mediante el cliente de Better Auth existente y cierre de sesión. La configuración y el handler Better Auth permanecen intactos, incluido disableSignUp=true; no hay registro público, OAuth, invitaciones ni recuperación de contraseña. Validación de formulario con Zod y validación independiente en servidor mediante Better Auth. Errores de credenciales genéricos, sin revelar existencia de cuenta ni propagar detalles del proveedor. Destinos de navegación fijos y del mismo origen.
+
+El guard server-only reutilizable `lib/panel/access.ts` verifica sesión vigente en Better Auth sin cookie cache ni refresh desde RSC, resuelve UserProfile exclusivamente por authUserId y exige tenant existente/coherente. Consulta asignaciones por tenantId y userProfileId del servidor. OWNER/ADMIN conservan alcance COMPANY; MANAGER/SALES/TECHNICIAN/WAREHOUSE, BRANCH con sucursal de la misma empresa. Roles desconocidos, relaciones inconsistentes y errores de servicio deniegan acceso. Sin sesión redirige a /acceso; sin perfil/tenant muestra una negativa genérica y permite cerrar sesión. No usa email, encabezados o parámetros enviados por el navegador para determinar pertenencia.
+
+El layout y la página /panel ejecutan el guard; React cache solo deduplica el render de una petición, sin caché compartida entre usuarios. Cada futura página, acción o endpoint protegido deberá invocarlo de nuevo y autorizar su operación. Esta primera pantalla solo admite consultar la propia cuenta, empresa y asignaciones; un perfil válido sin roles ve su cuenta y la ausencia de asignaciones, sin adquirir permisos operativos. No se infieren estados de Tenant.accountStatus, cuya semántica sigue pendiente. No se entregan tokens, credenciales ni datos fiscales, clientes, precios o inventario al shell del panel.
+
+Sidebar responsive y topbar con identidad global MILO en azul, negro, gris y plateado. La personalización del tenant no modifica el panel. /acceso y /panel se renderizan dinámicamente y quedan fuera de indexación; el cierre invalida la sesión con Better Auth y realiza navegación completa para descartar el árbol privado del router. Solo cambió la página pública de acceso; el resto de páginas públicas, storefront, Prisma, migraciones y .env se preservan.
+
+Verificación: 18 pruebas automatizadas con fixtures solo en memoria, incluido ingreso/cookie/cierre y registro bloqueado en el handler real, además de accesos permitidos/denegados del guard para seis roles, múltiples sucursales y cruces de tenant. Lint, typecheck y build con BETTER_AUTH_URL HTTPS temporal de proceso correctos. Comprobaciones HTTP de producción aislada sin PostgreSQL: /acceso 200, /panel anónimo o con identidad/rol/cookie falsificados redirige a /acceso, siete rutas públicas 200, tienda desconocida 404, registro bloqueado y correo malformado rechazado. Cache-Control del acceso: private/no-store. No se crearon usuarios, tenants ni sesiones reales. La comprobación visual en navegador no estuvo disponible por falta del host de automatización; no se probó un ingreso con credenciales reales.

@@ -1,5 +1,57 @@
 # Alcance funcional — Módulo Mayorista V1
 
+> D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
+
+> D-038: los importes monetarios actuales y futuros del módulo, incluidos precios y totales cuando corresponda implementarlos, deben usar `100.000,00`. Norma global en [MONEY_FORMAT.md](MONEY_FORMAT.md). La presentación no habilita nuevas listas de precios, costos, impuestos, pagos, monedas ni reglas comerciales; aplicado actualmente a los campos de precio habitual y por presentación.
+
+> D-034: el ingreso que mostraba resultado incierto falló por un cliente en memoria anterior a la migración, no por una modificación del contrato comercial. La investigación READ ONLY no encontró movimientos/saldos/auditorías de inventario de Milo Store. Caché y diagnóstico corregidos, sin recrear solicitudes ni datos; idempotencia, alcance por sucursal y reglas operativas conservados. Ver DECISIONS.md.
+
+> Estado D-033, 2026-11-10: migración de trazabilidad aplicada de forma controlada a milo_dev; sus dos campos y dos CHECK quedaron verificados y las cuatro migraciones están al día. Respaldo completo validado y datos anteriores intactos. No se crearon movimientos ni se amplió el alcance mayorista. La aplicación no constituye una prueba de movimiento real desde el panel; las referencias siguientes a migración pendiente son históricas. Ver DECISIONS.md para la evidencia.
+
+### Inventario manual preparado (D-033)
+
+`/panel/inventario` consulta productos/saldos por sucursal e historial. `/ingresar` suma cantidades enteras en unidad base; `/ajustar` suma/resta con motivo obligatorio; referencia real opcional. Movimiento, incremento de saldo y auditoría atómicos, con UUID estable y lock de Product. OWNER/ADMIN COMPANY y WAREHOUSE BRANCH operan; MANAGER BRANCH consulta; SALES/TECHNICIAN sin acceso. Flujos completos/idempotencia/concurrencia/rollback probados realmente en PostgreSQL aislado. La migración de trazabilidad solo se preparó y probó: operaciones bloqueadas en milo_dev hasta autorización posterior de aplicación. Sin reservas, conversiones, fracciones, transferencias o ventas/pedidos. Ver D-033.
+
+### Panel ERP y dashboard (D-032)
+
+Inicio incorpora conteos reales del tenant de clientes registrados (todos los estados) y productos (publicados o no) para OWNER/ADMIN COMPANY. No concede acceso comercial ni aprobación. Ventas, pedidos, gráfico semanal y últimas ventas muestran estados vacíos; no se implementan operaciones o cifras simuladas. Sidebar agrupa Artículos/Administración con enlaces reales autorizados; los demás módulos figuran Próximamente. Alcance/sucursales asignadas se muestran sin inventar una sucursal activa. Ver D-032.
+
+### Sucursales administrativas (D-031)
+
+`/panel/sucursales` incorpora listado, búsqueda, paginación, alta y edición del nombre de sucursales reales del tenant autenticado. Solo OWNER/ADMIN COMPANY, con Zod, concurrencia y auditoría atómica. Branch no tiene dirección/contacto/estado; se conservan IDs y relaciones, sin borrado, asignaciones, stock ni cambios de historial. Pruebas de persistencia/rollback simuladas, sin crear sucursales en PostgreSQL. Ver D-031.
+
+### Carga rápida de productos (D-030)
+
+Alta/edición principal con nombre, SKU, descripción, categoría, marca opcional y precio de venta. Alta habitual por UN/COUNT con presentación individual factor 1 y precio explícito cero o positivo, en una transacción auditada. En edición se reutiliza una única individual habilitada o se crea si falta y se ingresa precio; casos ambiguos/especiales permanecen en «Opciones avanzadas». Se conservan las presentaciones adicionales y los productos existentes, sin migrarlos. Sin stock inicial, cálculos de fracciones/redondeos, ventas o pedidos. Pruebas en memoria sin datos reales nuevos; ver D-030.
+
+### Marcas y presentaciones administrativas (D-029)
+
+`/panel/marcas` permite listado, búsqueda, alta y edición; `/panel/productos/[id]` permite gestionar presentaciones, habilitación y precios separados. Solo OWNER/ADMIN COMPANY del tenant resuelto en servidor, con decimales exactos, concurrencia, historial protegido y auditoría atómica. Sin precio ni factor implícitos; precios cero o positivos autorizados. Negativos bloqueados y pendientes de definición, al igual que los cálculos de fracciones/conversión/redondeo. Pruebas de persistencia simuladas, sin generar datos reales. D-029 amplía D-027; no implementa catálogo público, stock, pedidos ni ventas.
+
+> D-028: cargadas únicamente las unidades base aprobadas UN/COUNT (Unidad) y M/LENGTH (Metro). El alta de productos ya dispone de opciones; no se crearon productos, categorías, marcas, presentaciones u otros datos comerciales. El alcance y las reglas operativas pendientes no cambian. Las referencias a alta bloqueada por ausencia de unidades son históricas.
+
+### Catálogo administrativo inicial (D-027)
+
+`/panel/categorias` y `/panel/productos` permiten administración básica tenant-scoped por OWNER/ADMIN COMPANY, con búsqueda, alta y edición de fichas. Marcas existentes seleccionables; presentaciones y precios en lectura. Sin unidades base cargadas el alta de productos se deshabilita; no se inventa su vocabulario ni se generan datos. Los valores operativos de fracciones/conversiones/redondeos siguen pendientes y no se calculan. No hay eliminación, stock, pedidos, ventas ni cambios al storefront público. Ver D-027 en DECISIONS.md.
+
+### Configuración de empresa inicial (D-026)
+
+La administración básica del perfil tiene ahora `/panel/empresa`: OWNER/ADMIN COMPANY pueden consultar su empresa y editar el nombre comercial. Dirección y contacto permanecen de lectura por contratos pendientes; también son de lectura moneda, locale, zona horaria y priceVisibility. Validación, aislamiento y auditoría mínima del cambio implementados sin alterar Prisma ni permisos de otros módulos. No se habilitan edición de precios, datos fiscales, storefront, logo, catálogo, inventario o pedidos. Pruebas del guardado realizadas en memoria, sin crear o modificar datos reales de empresa.
+
+> D-025, 2026-11-09: Milo Store y responsable autorizado como OWNER/COMPANY sin sucursal quedaron activados. No se crearon productos, clientes, pedidos ni otros datos comerciales, ni se amplió el alcance mayorista. Sin sesiones automáticas y emailVerified=false; primer ingreso manual pendiente. Las referencias a activación sin ejecutar describen etapas anteriores.
+
+### Preparación local de activación (D-024)
+
+Se preparó un [CLI local de uso único](../scripts/activation/README.md) para Milo Store y su primer OWNER, sin ejecutar el alta. Sobre milo_dev solo se realizó dry-run read-only; no se crean tenants, identidades, roles ni sesiones. El rollback PostgreSQL real pasó en una base temporal autorizada, verificada vacía y eliminada. Registro público deshabilitado y alcance mayorista intacto; no se habilitan precios, compra ni nuevos módulos.
+
+> Estado actualizado D-023: `/acceso` ofrece ingreso real por correo/contraseña y `/panel` tiene estructura protegida empresarial. Solo se muestran cuenta, empresa y asignaciones reales autorizadas. Sin registro público, invitaciones, métricas ficticias ni módulos comerciales operativos. TenantStorefront permanece aplicado, sin integración editorial. Las referencias anteriores a ingreso informativo o login pendiente describen etapas previas.
+
+## Preparación editorial sin funcionalidad operativa (D-022)
+
+TenantStorefront representa configuración editorial futura aislada por tenant: plantilla WHOLESALE, política MANUAL, borrador y snapshot publicado JSONB, fecha y revisión para concurrencia. El [contrato previsto](DATA_MODEL_V1.md#tenantstorefront--preparación-de-persistencia-editorial-d-022) y la publicación manual por OWNER/ADMIN están documentados; autorización, validación, edición y publicación efectivas siguen pendientes. La migración ya se aplicó; el portal sigue usando el registro editorial existente.
+
+Esto no incorpora catálogo operativo, panel, login, endpoints ni autorregistro. No cambia Tenant.priceVisibility, el acceso a precios privados, la autorización separada de compra ni las restricciones comerciales/Better Auth existentes.
+
 > Estado público vigente (D-021): MILO es la plataforma de HenkoSoft. Sitio institucional multipágina en `/`; Milo Store en `/tiendas/milo-store`; `/acceso` solo informa el estado del ingreso. Sin nuevos módulos, pantallas privadas ni cambios de datos. Las referencias históricas a una única landing quedan reemplazadas por esta estructura.
 
 ## Propósito y estado actual
@@ -65,7 +117,7 @@ Las referencias a WhatsApp describen el enlace de contacto existente; no implica
 
 **Pendiente**
 
-- Implementar alta, edición y publicación administrativa, consulta pública, búsqueda y ficha.
+- Alta, edición y estado de publicación de fichas implementados en el panel (D-027); el alta exige unidades existentes. Administración de presentaciones implementada en D-029. Consulta pública, búsqueda/ficha pública e imágenes siguen pendientes.
 - Definir detalles de búsqueda y presentación que no estén especificados en el alcance acordado.
 
 **Fuera de alcance por ahora**
@@ -82,7 +134,7 @@ Las referencias a WhatsApp describen el enlace de contacto existente; no implica
 
 **Pendiente**
 
-- Implementar administración de categorías y marcas junto con la administración básica de productos.
+- Administración básica de categorías implementada (D-027); administración de marcas implementada (D-029) y seleccionable en productos.
 - Definir los campos y reglas de mantenimiento que no estén especificados.
 
 **Fuera de alcance por ahora**
@@ -100,7 +152,7 @@ Las referencias a WhatsApp describen el enlace de contacto existente; no implica
 
 **Pendiente**
 
-- Implementar la administración y consulta privada de la lista.
+- Administración del precio independiente por presentación implementada (D-029). Consulta comercial privada para clientes pendiente.
 - Definir detalles de edición y presentación que no estén especificados.
 
 **Fuera de alcance por ahora**
@@ -162,8 +214,8 @@ Las referencias a WhatsApp describen el enlace de contacto existente; no implica
 
 **Pendiente**
 
-- Implementar la administración de inventario y la consulta de movimientos necesaria para gestionarlo.
-- Definir los detalles de asociación con sucursales en operaciones concretas que no estén acordados.
+- Activar el módulo manual mediante aplicación controlada de la migración pendiente, con autorización posterior. Código y pruebas aisladas completos en D-033; milo_dev no fue migrado.
+- Movimientos por pedidos/ventas, cantidades fraccionarias, conversiones y reversos automáticos siguen pendientes.
 
 **Fuera de alcance por ahora**
 
@@ -224,3 +276,23 @@ OrderLine conserva snapshots, pero sigue editable mientras no se haya definido e
 ### Storefront editorial reutilizable (D-021, fases 2 y 3)
 
 El portal /tiendas/milo-store ahora se sirve mediante app/(comercial)/tiendas/[slug], con plantilla mayorista y componentes comerciales reutilizables. Solo existe la entrada editorial milo-store; no corresponde a una creación, carga o consulta de Tenant. Personalización visual acotada al storefront y panel con identidad global de MILO. No cambian el esquema, los permisos, el alcance mayorista ni el acceso comercial.
+
+### D-022 — Aplicación controlada verificada
+
+El 2026-11-09 se confirmó la conexión a `127.0.0.1:5432/milo_dev` (PostgreSQL 17.11), las dos migraciones anteriores completas con checksums coincidentes y una única pendiente. Por autorización expresa se añadió BEGIN/COMMIT con lock_timeout=10s y statement_timeout=60s a la migración pendiente, conservando su DDL y cinco CHECK. Prisma 7.10.1 ejecutó únicamente add_tenant_storefront mediante migrate deploy.
+
+Respaldo completo: evidencia local no versionada (84.775 bytes); pg_dump -Fc 17.11, pg_restore --list (191 entradas) y lectura completa sin restaurar, todos correctos. SHA-256: `d07f4fd25762bd24e0c7c8ef3cedbaf2e94532b405907922d1bec7c2c17d90a8`. Evidencia técnica en archivos .audit.json y .verified.json del mismo nombre base fuera del repositorio.
+
+Verificados tabla vacía, dos enums, PK/índice único de slug, FK RESTRICT y cinco CHECK validados. Historial anterior intacto y huellas de esquema/datos de las 25 tablas previas coincidentes, incluidas las cuatro tablas Better Auth. migrate status al día, prisma validate correcto y diff real/schema vacío. Sin crear usuarios, tenants ni datos comerciales ni modificar .env, Docker o Better Auth. La edición/publicación de storefront y su autorización efectiva siguen pendientes.
+
+## Ingreso y panel empresarial (D-023)
+
+Implementado por autorización expresa: formulario real en /acceso mediante el cliente de Better Auth existente y cierre de sesión. La configuración y el handler Better Auth permanecen intactos, incluido disableSignUp=true; no hay registro público, OAuth, invitaciones ni recuperación de contraseña. Validación de formulario con Zod y validación independiente en servidor mediante Better Auth. Errores de credenciales genéricos, sin revelar existencia de cuenta ni propagar detalles del proveedor. Destinos de navegación fijos y del mismo origen.
+
+El guard server-only reutilizable `lib/panel/access.ts` verifica sesión vigente en Better Auth sin cookie cache ni refresh desde RSC, resuelve UserProfile exclusivamente por authUserId y exige tenant existente/coherente. Consulta asignaciones por tenantId y userProfileId del servidor. OWNER/ADMIN conservan alcance COMPANY; MANAGER/SALES/TECHNICIAN/WAREHOUSE, BRANCH con sucursal de la misma empresa. Roles desconocidos, relaciones inconsistentes y errores de servicio deniegan acceso. Sin sesión redirige a /acceso; sin perfil/tenant muestra una negativa genérica y permite cerrar sesión. No usa email, encabezados o parámetros enviados por el navegador para determinar pertenencia.
+
+El layout y la página /panel ejecutan el guard; React cache solo deduplica el render de una petición, sin caché compartida entre usuarios. Cada futura página, acción o endpoint protegido deberá invocarlo de nuevo y autorizar su operación. Esta primera pantalla solo admite consultar la propia cuenta, empresa y asignaciones; un perfil válido sin roles ve su cuenta y la ausencia de asignaciones, sin adquirir permisos operativos. No se infieren estados de Tenant.accountStatus, cuya semántica sigue pendiente. No se entregan tokens, credenciales ni datos fiscales, clientes, precios o inventario al shell del panel.
+
+Sidebar responsive y topbar con identidad global MILO en azul, negro, gris y plateado. La personalización del tenant no modifica el panel. /acceso y /panel se renderizan dinámicamente y quedan fuera de indexación; el cierre invalida la sesión con Better Auth y realiza navegación completa para descartar el árbol privado del router. Solo cambió la página pública de acceso; el resto de páginas públicas, storefront, Prisma, migraciones y .env se preservan.
+
+Verificación: 18 pruebas automatizadas con fixtures solo en memoria, incluido ingreso/cookie/cierre y registro bloqueado en el handler real, además de accesos permitidos/denegados del guard para seis roles, múltiples sucursales y cruces de tenant. Lint, typecheck y build con BETTER_AUTH_URL HTTPS temporal de proceso correctos. Comprobaciones HTTP de producción aislada sin PostgreSQL: /acceso 200, /panel anónimo o con identidad/rol/cookie falsificados redirige a /acceso, siete rutas públicas 200, tienda desconocida 404, registro bloqueado y correo malformado rechazado. Cache-Control del acceso: private/no-store. No se crearon usuarios, tenants ni sesiones reales. La comprobación visual en navegador no estuvo disponible por falta del host de automatización; no se probó un ingreso con credenciales reales.

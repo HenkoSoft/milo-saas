@@ -42,6 +42,13 @@ Cada empresa puede administrar una o varias sucursales. La asignación de usuari
 
 Configuración inicial: Argentina, ARS, español, `America/Argentina/Buenos_Aires`.
 
+## Formato monetario obligatorio
+
+- Todo campo o importe monetario actual y futuro usa punto para miles, coma para centavos y dos decimales visibles: `100.000,00`. Aplica a entradas, vistas de consulta, tablas, totales y documentos, en cualquier módulo y para cualquier moneda habilitada. Identificar la moneda explícitamente en el contexto; no inferirla por los separadores.
+- Seguir `docs/MONEY_FORMAT.md` (D-038). Reutilizar las utilidades monetarias existentes compatibles con el contrato del campo y cubrir su formato/conversión con pruebas; no crear formatos alternativos por pantalla.
+- El formato localizado pertenece a la interfaz. Transportar y guardar decimales canónicos exactos, sin miles y con punto decimal; validar con Zod en servidor. No usar Number/parseFloat para dinero ni redondear, truncar o transformar un campo vacío en cero.
+- Esta regla no habilita nuevas monedas, importes negativos, conversiones, impuestos, costos ni módulos. Cantidades y factores tienen contratos propios.
+
 ## Seguridad, privacidad e integridad
 
 - Validar entradas externas con Zod en servidor. Autenticar y autorizar cada operación server-side; denegar por defecto.
