@@ -7,5 +7,5 @@ export default async function CategoryPage({ params }: { params: Promise<{ id: s
   await requirePanelContext();
   const result = await getCategory((await params).id);
   if (result.status !== "ok") return <CatalogProblem status={result.status} />;
-  return <><CatalogHeading title="Editar categoría" description="Los cambios se aplican a la categoría de tu empresa." /><section className="milo-panel-card"><CategoryForm category={result.data} /></section></>;
+  return <><CatalogHeading title="Editar categoría" description="Los cambios se aplican a la categoría de tu empresa." /><CategoryForm category={result.data} /></>;
 }

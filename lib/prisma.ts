@@ -14,11 +14,14 @@ const globalForPrisma = globalThis as unknown as {
   prismaConstructor?: typeof PrismaClient;
 };
 
-// A generated client reload can change its model metadata while Next.js keeps
-// globalThis alive. Reuse only the client built by this exact constructor.
+// HMR may retain a constructor while its cached client's delegates still use
+// older generated metadata. Check current administrative models as well.
 // Do not disconnect a replaced client: an in-flight request may still own it.
 const cached = process.env.NODE_ENV !== "production" &&
-  globalForPrisma.prismaConstructor === PrismaClient ? globalForPrisma.prisma : undefined;
+  globalForPrisma.prismaConstructor === PrismaClient &&
+  ["customer", "customerCounter", "supplier", "supplierCounter", "purchase", "purchaseCounter", "purchaseLine"].every(
+    model => typeof globalForPrisma.prisma?.[model as "customer" | "customerCounter" | "supplier" | "supplierCounter" | "purchase" | "purchaseCounter" | "purchaseLine"]?.findMany === "function",
+  ) ? globalForPrisma.prisma : undefined;
 
 export const prisma =
   cached ??

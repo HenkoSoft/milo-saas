@@ -1,0 +1,78 @@
+/* Shared administrative editors. Product-specific field arrangements stay local. */
+@layer components {
+  .milo-record-workspace { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .75rem 1rem; min-width: 0; }
+  .milo-record-workspace > .milo-panel-welcome { padding-bottom: 0; }
+  .milo-record-workspace > .milo-panel-card, .milo-record-list-notice { grid-column: 1 / -1; }
+  .milo-record-list-notice { min-height: 1.25rem; color: #1a5a3d; font-size: .85rem; }
+  .milo-record-new { align-self: center; }
+  .milo-record-dialog { width: min(1120px, calc(100% - 2rem)); height: min(740px, calc(100dvh - 2rem)); max-width: none; max-height: calc(100dvh - 2rem); margin: auto; padding: 0; border: 1px solid #b9c7da; border-radius: 12px; background: #fff; color: #24334b; color-scheme: light; box-shadow: 0 24px 90px #09142655; overflow: hidden; }
+  .milo-record-dialog[data-compact="true"] { width: min(760px, calc(100% - 2rem)); height: min(460px, calc(100dvh - 2rem)); }
+  .milo-record-dialog[open] { display: flex; flex-direction: column; }
+  .milo-record-dialog::backdrop { background: #09142699; }
+  .milo-record-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .85rem 1.25rem; border-bottom: 1px solid #dce3ee; flex-shrink: 0; }
+  .milo-record-dialog-heading h2 { font-size: 1.2rem; font-weight: 650; }
+  .milo-record-dialog-heading p { font-size: .8rem; color: #526780; margin-top: .25rem; }
+  .milo-record-dialog-heading button { font-size: 1.25rem; min-width: 44px; flex-shrink: 0; }
+  .milo-record-modal-fields { border: 0; padding: 0; margin: 0; min-width: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+  .milo-erp .milo-record-editor { padding: 0; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .milo-record-modal-fields > .milo-record-editor { flex: 1; border: 0; border-radius: 0; box-shadow: none; }
+  .milo-record-tabs { display: flex; gap: .5rem; padding: .5rem 1.25rem 0; border-bottom: 1px solid #dce3ee; flex-shrink: 0; }
+  .milo-record-tabs button { padding: .65rem 1.25rem; min-height: 44px; border-bottom: 3px solid transparent; color: #526780; font-size: .85rem; }
+  .milo-record-tabs button[aria-selected="true"] { border-color: #2867ea; color: #214d87; font-weight: 650; }
+  .milo-record-editor-body { padding: 1rem 1.25rem; min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scroll-padding: 1rem; }
+  .milo-record-modal-fields .milo-record-editor-body { flex: 1; }
+  .milo-record-editor [role="tabpanel"][hidden] { display: none; }
+  .milo-record-editor [role="tabpanel"] { display: grid; gap: .75rem; min-width: 0; }
+  .milo-record-editor .milo-catalog-fields, .milo-record-editor .milo-catalog-form { gap: .75rem; }
+  .milo-record-editor .milo-catalog-form-grid { align-items: start; gap: .75rem 1rem; }
+  .milo-record-editor .milo-product-data > .milo-catalog-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .milo-record-editor .milo-product-data .milo-field:first-child { grid-column: span 2; }
+  .milo-product-description { grid-column: 1 / -1; }
+  .milo-record-editor .milo-product-heading { margin: 0; }
+  .milo-record-editor .milo-product-heading h2 { font-size: 1rem; margin: 0; }
+  .milo-record-editor .milo-company-hint { margin-top: 0; font-size: .75rem; line-height: 1.5; }
+  .milo-record-editor .milo-field { align-content: start; gap: .35rem; margin-bottom: 0; min-width: 0; }
+  .milo-record-editor .milo-field input, .milo-record-editor .milo-field select, .milo-record-editor .milo-field textarea { min-height: 40px; padding: .5rem .7rem; font-size: .9rem; }
+  .milo-record-editor .milo-field textarea { min-height: 70px; line-height: 1.4; }
+  .milo-record-editor .milo-product-price-row { grid-template-columns: minmax(0, 1fr); border: 0; padding: 0; max-width: 38rem; }
+  .milo-record-editor .milo-product-price-row input { font-size: 1.25rem; }
+  .milo-record-editor .milo-product-advanced { margin-top: .75rem; }
+  .milo-record-editor .milo-product-advanced > summary { padding: .65rem .85rem; min-height: 44px; }
+  .milo-record-editor-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; padding: .75rem 1.25rem; border-top: 1px solid #dce3ee; background: #f7f9fc; flex-shrink: 0; }
+  .milo-record-editor-footer .milo-company-form-actions { margin-left: auto; flex-wrap: wrap; }
+  .milo-record-editor-footer .milo-form-error { margin: 0; padding: .5rem; font-size: .8rem; }
+  .milo-record-dialog-loading { padding: 1.5rem; display: grid; gap: 1rem; }
+  .milo-record-editor-body, .milo-record-dialog-heading, .milo-record-editor-footer { overflow-wrap: anywhere; }
+  @media (max-width: 680px) {
+    .milo-record-workspace { grid-template-columns: minmax(0, 1fr); }
+    .milo-record-new { justify-self: start; }
+    .milo-record-dialog, .milo-record-dialog[data-compact="true"] { width: calc(100% - 1rem); height: calc(100dvh - 1rem); max-height: calc(100dvh - 1rem); }
+    .milo-record-editor .milo-catalog-form-grid { grid-template-columns: minmax(0, 1fr); }
+    .milo-record-editor .milo-product-data > .milo-catalog-form-grid { grid-template-columns: minmax(0, 1fr); }
+    .milo-record-editor .milo-product-data .milo-field:first-child { grid-column: auto; }
+    .milo-record-dialog-heading, .milo-record-editor-body, .milo-record-editor-footer { padding-inline: .85rem; }
+  }
+}
+
+@media (min-width: 1000px) { .milo-customer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.milo-customer-editor .milo-catalog-form { gap: .65rem; }
+.milo-customer-grid .milo-field { min-width: 0; }
+.milo-customer-migration-notice { grid-column: 1 / -1; }
+.milo-supplier-editor .milo-catalog-form { gap: .5rem; }
+.milo-supplier-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .5rem .75rem; min-width: 0; }
+.milo-supplier-grid .milo-field { min-width: 0; grid-column: span 6; }
+.milo-supplier-grid [data-field="code"], .milo-supplier-grid [data-field="postalCode"] { grid-column: span 2; }
+.milo-supplier-grid [data-field="legalName"], .milo-supplier-grid [data-field="contactName"] { grid-column: span 5; }
+.milo-supplier-grid [data-field="address"] { grid-column: span 7; }
+.milo-supplier-grid [data-field="city"] { grid-column: span 3; }
+.milo-supplier-grid [data-field="internalNotes"] { grid-column: 1 / -1; }
+.milo-erp .milo-supplier-editor .milo-field { gap: .2rem; }
+.milo-erp .milo-supplier-editor .milo-field input, .milo-erp .milo-supplier-editor .milo-field select { min-height: 36px; padding-block: .35rem; }
+.milo-erp .milo-supplier-editor .milo-field textarea { min-height: 78px; }
+@media (max-width: 760px) {
+  .milo-supplier-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .milo-supplier-grid .milo-field { grid-column: auto; }
+  .milo-supplier-grid [data-field="address"], .milo-supplier-grid [data-field="internalNotes"] { grid-column: 1 / -1; }
+  .milo-erp .milo-supplier-editor .milo-field input, .milo-erp .milo-supplier-editor .milo-field select { min-height: 40px; }
+}
+@media (max-width: 520px) { .milo-supplier-grid { grid-template-columns: minmax(0, 1fr); } }

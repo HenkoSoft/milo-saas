@@ -7,5 +7,5 @@ export default async function BrandPage({ params }: { params: Promise<{ id: stri
   await requirePanelContext();
   const result = await getBrand((await params).id);
   if (result.status !== "ok") return <CatalogProblem status={result.status} />;
-  return <><CatalogHeading title="Editar marca" description="Actualizá el nombre sin alterar su asociación a los productos." /><section className="milo-panel-card"><BrandForm brand={result.data} /></section></>;
+  return <><CatalogHeading title="Editar marca" description="Actualizá el nombre sin alterar su asociación a los productos." /><BrandForm brand={result.data} /></>;
 }

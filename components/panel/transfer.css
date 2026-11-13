@@ -1,0 +1,27 @@
+@layer components {
+  .milo-transfer-tools { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; min-width: 0; }
+  .milo-transfer-tools > .milo-company-hint { flex-basis: 100%; margin: 0; font-size: .75rem; }
+  .milo-transfer-tools kbd { margin-left: .4rem; font: inherit; font-size: .7rem; opacity: .8; }
+  .milo-transfer-tools:has(.milo-import-dialog[open]) > .milo-transfer-error { display: none; }
+  .milo-import-dialog { width: min(1000px, calc(100% - 2rem)); }
+  .milo-import-dialog > .milo-import-editor { flex: 1; min-height: 0; border: 0; box-shadow: none; }
+  .milo-import-editor .milo-record-editor-body { flex: 1; }
+  .milo-print-sheet { background: #fff; color: #1a2f50; padding: 1.25rem; }
+  .milo-print-sheet > header { margin-bottom: 1rem; }
+  .milo-print-sheet h1 { font-size: 1.5rem; font-weight: 650; }
+  .milo-print-sheet p { font-size: .8rem; margin-block: .4rem; }
+  .milo-print-sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .milo-print-sheet th, .milo-print-sheet td { font-size: .75rem; padding: .35rem; border-bottom: 1px solid #dce3ee; text-align: left; overflow-wrap: anywhere; vertical-align: top; }
+  .milo-print-sheet th:first-child { width: 6rem; }
+  .milo-print-controls { margin-bottom: 1rem; }
+}
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  html, body { height: auto !important; overflow: visible !important; background: #fff !important; }
+  .milo-panel, .milo-panel-body, .milo-panel-content { display: block !important; height: auto !important; max-height: none !important; overflow: visible !important; padding: 0 !important; margin: 0 !important; }
+  .milo-sidebar, .milo-topbar, .milo-panel-footer, .milo-erp-topbar, .skip-link, .milo-print-controls { display: none !important; }
+  .milo-print-sheet { padding: 0; color: #111; }
+  .milo-print-sheet thead { display: table-header-group; }
+  .milo-print-sheet tr { break-inside: avoid; }
+  .milo-print-sheet th, .milo-print-sheet td { font-size: 9pt; }
+}

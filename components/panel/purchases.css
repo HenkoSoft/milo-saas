@@ -1,0 +1,52 @@
+@layer components {
+  .milo-purchase-dialog { width: min(1280px, calc(100% - 2rem)); height: min(880px, calc(100dvh - 2rem)); }
+  .milo-purchase-editor { max-height: calc(100dvh - 17rem); }
+  .milo-record-modal-fields > .milo-purchase-editor { max-height: none; }
+  .milo-purchase-editor .milo-record-tabs { gap: .25rem; }
+  .milo-purchase-editor .milo-catalog-fields { min-width: 0; }
+  .milo-purchase-editor .milo-field input, .milo-purchase-editor .milo-field select { min-height: 36px; padding-block: .35rem; }
+  .milo-purchase-editor [role="tabpanel"] { gap: .65rem; }
+  .milo-purchase-header { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, .8fr); gap: .6rem .8rem; align-items: start; }
+  .milo-purchase-header > :last-child { grid-column: auto; }
+  .milo-purchase-document { min-width: 0; border: 1px solid #d8e1ec; border-radius: 8px; padding: .75rem; display: grid; gap: .7rem; }
+  .milo-purchase-document legend { font-weight: 600; font-size: .85rem; padding: 0 .3rem; }
+  .milo-purchase-document-grid, .milo-purchase-supplier-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .65rem; min-width: 0; }
+  .milo-purchase-supplier { border-block: 1px solid #d8e1ec; padding-block: .65rem; }
+  .milo-purchase-supplier-grid { grid-template-columns: .65fr 1.6fr 1.2fr 1fr 1.5fr; }
+  .milo-purchase-supplier-grid dt { font-size: .75rem; color: #526780; }
+  .milo-purchase-supplier-grid dd { margin: .2rem 0; font-size: .85rem; overflow-wrap: anywhere; }
+  .milo-purchase-tax { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; }
+  .milo-purchase-tax .milo-field { flex: 0 1 220px; }
+  .milo-purchase-tax small { flex: 1 1 300px; }
+  .milo-purchase-tax .milo-field { flex: 0 1 220px; }
+  .milo-purchase-tax small { flex: 1 1 300px; }
+  .milo-purchase-document:disabled { opacity: .75; }
+  .milo-purchase-lines td:nth-child(3) { min-width: 200px; }
+  .milo-purchase-lookup { display: grid; gap: .3rem; min-width: 0; font-size: .85rem; }
+  .milo-purchase-lookup label { font-weight: 600; }
+  .milo-purchase-search { display: flex; gap: .4rem; min-width: 0; }
+  .milo-purchase-search input { min-width: 0; flex: 1; }
+  .milo-purchase-lookup input, .milo-purchase-lookup select { border: 1px solid #b9c7da; border-radius: 6px; min-height: 36px; padding: .35rem .6rem; width: 100%; background: #fff; }
+  .milo-purchase-lookup small { color: #526780; font-size: .75rem; }
+  .milo-erp .milo-purchase-lines { max-height: min(400px, 40dvh); min-height: 90px; overflow: auto; overscroll-behavior: contain; }
+  .milo-purchase-lines td, .milo-purchase-lines th { padding: .4rem .6rem; }
+  .milo-purchase-editor .milo-purchase-lines button { min-height: 36px; padding-block: .35rem; }
+  .milo-purchase-lookup small:empty { display: none; }
+  @media (min-width: 1000px) {
+    .milo-purchase-editor [data-lookup] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+    .milo-purchase-editor [data-lookup] > label:not(.sr-only), .milo-purchase-editor [data-lookup] > small { grid-column: 1 / -1; }
+  }
+  .milo-purchase-lines thead th { position: sticky; top: 0; z-index: 1; background: #f7f9fc; }
+  .milo-purchase-lines table { min-width: 760px; }
+  .milo-purchase-lines td:first-child { min-width: 110px; }
+  .milo-purchase-lines input { width: 125px; min-height: 36px; border: 1px solid #b9c7da; border-radius: 6px; padding: .35rem .5rem; text-align: right; background: #fff; }
+  .milo-purchase-confirm { display: flex; gap: .6rem; align-items: start; font-size: .85rem; }
+  .milo-purchase-confirm input { margin-top: .2rem; width: 18px; height: 18px; flex-shrink: 0; }
+  .milo-purchase-lookup :focus-visible, .milo-purchase-lines input:focus-visible { outline: 2px solid #2867ea; outline-offset: 2px; }
+  @media (max-width: 760px) {
+    .milo-purchase-document-grid, .milo-purchase-supplier-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .milo-purchase-header { grid-template-columns: minmax(0,1fr); }
+    .milo-purchase-header > :last-child { grid-column: auto; }
+    .milo-purchase-editor { max-height: calc(100dvh - 18rem); }
+  }
+}

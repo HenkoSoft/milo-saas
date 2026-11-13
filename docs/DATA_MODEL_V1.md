@@ -1,5 +1,32 @@
 # Modelo de datos propuesto — Mayorista V1
 
+> D-053 (2026-11-13): Ingreso y Consulta de Compras usan el mismo formulario y modelo. El contexto de navegación contiene solo controlador/estado del modal, nunca datos de tenant, costos o inventario. Ver [navegación y pruebas](PURCHASES_MODAL.md).
+
+> D-052 (2026-11-13): La apertura modal real y rutas de Compras conservan el mismo PurchaseForm y todos los contratos de borrador/recepción; no se altera el modelo, integridad, inventario, idempotencia ni auditoría. Ver [prueba modal real](PURCHASES_MODAL.md).
+
+> D-051 (2026-11-13): La presentación y optimización de Compras conservan el modelo y contratos actuales, Decimal y las restricciones de base. La estimación visual exacta no sustituye la validación ni el cálculo servidor. Ver [mediciones, verificaciones y límites](PURCHASES_PERFORMANCE.md).
+
+> D-050 (2026-11-12): Los cinco campos opcionales de Purchase (`documentType`, `pointOfSale`, `documentNumber`, `purchaseCategory`, `taxAmount`) ya est?n desplegados en `milo_dev`. La octava migraci?n autorizada conserva columnas y datos anteriores, incorpora el CHECK validado y ajusta ?nicamente la funci?n de integridad para neto + IVA manual. No agrega entidades de N/C, deuda o pagos. Las notas anteriores de despliegue pendiente son hist?ricas. Ver [registro](DECISIONS.md#d-050--despliegue-autorizado-de-detalles-de-compras).
+
+> D-049 (2026-11-12): Purchase incorpora documentType, pointOfSale, documentNumber, purchaseCategory y taxAmount opcionales en el esquema preparado; total sigue siendo final y suma IVA manual explícito cuando existe. Sin desglose, IVA permanece null y el cálculo V1 se conserva. Categoría de compra es texto propio del documento, independiente de Category. La octava migración se probó únicamente aislada; en milo_dev están aplicadas solo las siete anteriores. No existen entidades de N/C, deuda ni pagos; pantallas preparadas no implican modelo aprobado. Ver [contrato](PURCHASES_MODULE_RESTRUCTURE.md).
+
+> D-048 (2026-11-12): se agregan PurchaseCounter por tenant, Purchase (CP000001, proveedor, sucursal, fecha, ARS, DRAFT/RECEIVED, versión, actores, referencia/observaciones y huellas de operación) y PurchaseLine (producto/unidad/SKU/nombre históricos, cantidad, costo y subtotal). StockMovement.purchaseLineId distingue compras de WholesaleOrder, con FK compuesta y una recepción por renglón. Cantidades enteras en unidad base, costos Decimal y proveedor histórico mínimo. Una compra incluso borrador bloquea eliminar su proveedor; FKs desconocidas siguen denegando. No hay pagos, saldos de proveedor ni precio de venta actualizado. Migración preparada y probada solo aislada; pendiente en la base real. Contrato: [PURCHASES_V1_PROPOSAL.md](PURCHASES_V1_PROPOSAL.md).
+
+> D-047: el modelo no cambia. La exportación de Proveedores requiere que el cliente Prisma del proceso incluya Supplier/SupplierCounter; se comprueban delegados al reutilizar el singleton y se recargó Next.js para descartar metadatos antiguos.
+
+> D-046: Excel/impresión no añade campos ni relaciones. Las altas importadas respetan Customer REGISTERED y su autorización separada, y los contratos actuales de Supplier. Estados/JSON existentes no se sobrescriben; lote y auditorías se guardan atómicamente en el modelo vigente. Contrato: [ADMIN_DATA_TRANSFER_PROPOSAL.md](ADMIN_DATA_TRANSFER_PROPOSAL.md).
+
+> D-045: Supplier y SupplierCounter disponibles con clave tenant, nombres, CUIT/IVA opcionales, contacto, domicilio, observaciones y numeración empresarial. Migración autorizada y aplicada a milo_dev el 2026-11-11, sin cambios en datos previos. No hay relaciones de compras inventadas; futuras referencias compuestas/RESTRICT requieren revisión de borrado. Contrato: [SUPPLIERS_V1_PROPOSAL.md](SUPPLIERS_V1_PROPOSAL.md).
+
+> D-044 (alcance corregido): [ADMIN_TABLES.md](ADMIN_TABLES.md) queda como referencia opcional de Clientes y Proveedores. El usuario retiró la obligación de repetir ese formato en otros listados actuales o futuros; no se modifican modelos, datos, permisos ni reglas comerciales.
+
+> D-043 (2026-11-11): ampliación de Clientes aprobada e implementada. La migración 20261111043000_expand_customer_commercial_profile fue autorizada expresamente y aplicada mediante Prisma Migrate a 127.0.0.1:5432/milo_dev, tras respaldo externo verificable. Quedaron cinco migraciones aplicadas y ninguna pendiente; las huellas de los campos originales de todas las tablas coinciden y los nuevos campos son consultables. El esquema anterior conserva su fallback básico; la ampliación ya está habilitada en milo_dev. Ver [CUSTOMERS_V1_EXPANSION_PROPOSAL.md](CUSTOMERS_V1_EXPANSION_PROPOSAL.md).
+
+
+> D-041: implementada la administración básica de Clientes con listado, búsqueda, paginación y modal compartido, solo OWNER/ADMIN COMPANY del tenant. Contacto v1 y alta REGISTERED sin autorización comercial; estados anteriores inalterados y JSON incompatible protegido. Concurrencia y auditoría transaccionales, sin cambios de esquema ni datos reales durante la tarea. Contrato aprobado: [CUSTOMERS_V1_PROPOSAL.md](CUSTOMERS_V1_PROPOSAL.md). Supera las referencias anteriores a Clientes sin implementar.
+
+> D-040: Productos, Marcas y Categorías comparten el patrón de alta/edición modal y sus páginas directas, sin cambios de servicios, permisos, auditoría ni modelo. Clientes y Proveedores siguen sin alta/edición implementada. Contrato y alcance: [ADMIN_FORMS.md](ADMIN_FORMS.md).
+
 > D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
 
 > D-038: todos los campos monetarios actuales y futuros se presentan como `100.000,00`; los contratos internos conservan decimales exactos sin miles y con punto decimal, moneda explícita y los límites vigentes. Vacío y cero son distintos. La regla no modifica cantidades, factores, signos permitidos ni entidades: [MONEY_FORMAT.md](MONEY_FORMAT.md).
@@ -252,7 +279,7 @@ El acceso a esta entidad es privado: el servidor solo entrega precio a clientes 
 
 | Entidad/campos principales | Tipos sugeridos y reglas |
 |---|---|
-| `Customer`: `id`, `tenant_id`, datos de contacto aprobados, estado, timestamps | UUID y datos personales mínimos. Campos exactos y estados pendientes. Puede operar sin `UserProfile` ni identidad autenticable; el vínculo Customer-identidad no está implementado. Cardinalidad y unicidad pendientes. No se asume que Customer sea UserProfile. |
+| `Customer`: `id`, `tenant_id`, datos de contacto aprobados, estado, timestamps | D-041: contactData JSONB v1 con schemaVersion=1, name obligatorio y email/phone/address opcionales. Alta REGISTERED sin autorización comercial; estado previo inalterado al editar. JSON incompatible protegido. Sin cambios de esquema, unicidad inferida ni vínculo Customer-identidad. Puede operar sin UserProfile ni cuenta autenticable. Estados comerciales adicionales pendientes. |
 | `CustomerAccessRequest`: `id`, `tenant_id`, datos recibidos, estado de revisión, `reviewed_by_user_id NULL`, `reviewed_at NULL`, timestamps | La aprobación es manual. Campos/formato y ciclo de vida, canal y relación resultante con `Customer` quedan pendientes. Si se persisten datos personales, aplicar mínimo acceso y política de retención pendiente. |
 
 La relación entre solicitud aprobada y `Customer` debe definirse para evitar duplicar contacto. Cómo se autoriza a un cliente sin cuenta a consultar precios o pedidos online queda pendiente; no se asume que la existencia del registro de cliente le otorgue acceso autenticado.

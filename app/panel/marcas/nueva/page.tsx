@@ -6,5 +6,5 @@ import { CatalogHeading, CatalogProblem } from "@/components/panel/catalog-ui";
 export default async function NewBrandPage() {
   const context = await requirePanelContext();
   if (!canManageCatalog(context)) return <CatalogProblem status="forbidden" />;
-  return <><CatalogHeading title="Crear marca" description="Registrá una marca para los productos de tu empresa." /><section className="milo-panel-card"><BrandForm /></section></>;
+  return <><CatalogHeading title="Crear marca" description="Registrá una marca para los productos de tu empresa." /><BrandForm /></>;
 }

@@ -1,5 +1,32 @@
 # Diseño conceptual de datos multi-tenant
 
+> D-053 (2026-11-13): El ajuste de nombres/navegación de Compras conserva servicios, datos y esquema. Pruebas UI sin conexión a PostgreSQL; sin cambios de Prisma, migraciones, transacciones o auditoría. Ver [navegación y pruebas](PURCHASES_MODAL.md).
+
+> D-052 (2026-11-13): La corrección modal de Compras no modifica PostgreSQL, Prisma ni migraciones. Regresión nativa de UI con servidor/router de memoria, sin conexión a la base ni datos reales. Ver [prueba modal real](PURCHASES_MODAL.md).
+
+> D-051 (2026-11-13): La optimización de Compras no cambia Prisma schema/config/client, índices ni migraciones; no lee ni escribe datos de negocio de milo_dev. Mediciones y escrituras de prueba exclusivamente en bases temporales propias, eliminadas tras verificar propiedad. El despliegue D-050 mantiene su estado. Ver [mediciones, verificaciones y límites](PURCHASES_PERFORMANCE.md).
+
+> D-050 (2026-11-12): Aplicada exclusivamente `20261112060000_purchase_document_details` a `127.0.0.1:5432/milo_dev` con autorizaci?n expresa, respaldo PostgreSQL externo verificado y Prisma Migrate. Estado: ocho migraciones aplicadas con checksum correcto, ninguna pendiente. Cinco columnas nullable, CHECK validado y funci?n de integridad con IVA confirmados; huellas/cantidades de las 32 tablas anteriores intactas. Sin datos ficticios ni otros cambios en PostgreSQL. Las notas anteriores de despliegue pendiente son hist?ricas. Ver [registro](DECISIONS.md#d-050--despliegue-autorizado-de-detalles-de-compras).
+
+> D-049 (2026-11-12): milo_dev conserva las siete migraciones aplicadas, incluida add_purchases autorizada en la tarea previa. La octava, `20261112060000_purchase_document_details`, agrega cinco columnas nullable de comprobante/categoría/IVA y adapta integridad diferida; probada solo en base propia aislada, NO aplicada a milo_dev. Prisma omite columnas nuevas en consultas V1; esquema parcial deniega la extensión. N/C y pagos no agregan tablas ni escrituras: faltan reglas. Ver [contrato](PURCHASES_MODULE_RESTRUCTURE.md). Las notas de D-048 que indicaban séptima pendiente describen la preparación histórica.
+
+> D-048 (2026-11-12): preparada `20261112010000_add_purchases`: PurchaseCounter, Purchase, PurchaseLine y vínculo nullable/único de StockMovement hacia el renglón. FKs compuestas tenant/sucursal/producto y RESTRICT, CHECK de importes/cantidades/estado, triggers de documento recibido inmutable, identidad de unidad y coherencia diferida de recepción. Conserva las seis migraciones anteriores y los movimientos históricos. Probada con fixtures previos en PostgreSQL aislado; pendiente de autorización para `milo_dev`, que conserva seis migraciones aplicadas. El aviso de estructura pendiente impide escrituras. Contrato aprobado: [PURCHASES_V1_PROPOSAL.md](PURCHASES_V1_PROPOSAL.md). Las notas de despliegues anteriores son históricas, no habilitan esta migración.
+
+> D-047: corregida la reutilización de un cliente Prisma anterior a Supplier en la API. Es una corrección de caché del proceso web, sin cambios de esquema, registros o las seis migraciones aplicadas. La exportación fue confirmada tras recargar Next.js.
+
+> D-046: importación de altas de Clientes/Proveedores usa las tablas, contadores y AuditEvent existentes, con transacción Serializable, verificación del plan y replay sin duplicados. Desarrollo probado solo en base aislada; datos reales y seis migraciones intactos. No requiere cambios de esquema. Ver [ADMIN_DATA_TRANSFER_PROPOSAL.md](ADMIN_DATA_TRANSFER_PROPOSAL.md).
+
+> D-045: Supplier y SupplierCounter disponibles en milo_dev tras aplicar exclusivamente `20261111235000_add_suppliers` con autorización expresa el 2026-11-11. Respaldo externo verificado y huellas/conteos de las 27 tablas previas intactos; nuevas tablas vacías, sin proveedores ficticios. Seis migraciones aplicadas, ninguna pendiente. Contrato: [SUPPLIERS_V1_PROPOSAL.md](SUPPLIERS_V1_PROPOSAL.md).
+
+> D-044 (alcance corregido): [ADMIN_TABLES.md](ADMIN_TABLES.md) queda como referencia opcional de Clientes y Proveedores. El usuario retiró la obligación de repetir ese formato en otros listados actuales o futuros; no se modifican modelos, datos, permisos ni reglas comerciales.
+
+> D-043 (2026-11-11): ampliación de Clientes aprobada e implementada. La migración 20261111043000_expand_customer_commercial_profile fue autorizada expresamente y aplicada mediante Prisma Migrate a 127.0.0.1:5432/milo_dev, tras respaldo externo verificable. Quedaron cinco migraciones aplicadas y ninguna pendiente; las huellas de los campos originales de todas las tablas coinciden y los nuevos campos son consultables. El esquema anterior conserva su fallback básico; la ampliación ya está habilitada en milo_dev. Ver [CUSTOMERS_V1_EXPANSION_PROPOSAL.md](CUSTOMERS_V1_EXPANSION_PROPOSAL.md).
+
+
+> D-041: implementada la administración básica de Clientes con listado, búsqueda, paginación y modal compartido, solo OWNER/ADMIN COMPANY del tenant. Contacto v1 y alta REGISTERED sin autorización comercial; estados anteriores inalterados y JSON incompatible protegido. Concurrencia y auditoría transaccionales, sin cambios de esquema ni datos reales durante la tarea. Contrato aprobado: [CUSTOMERS_V1_PROPOSAL.md](CUSTOMERS_V1_PROPOSAL.md). Supera las referencias anteriores a Clientes sin implementar.
+
+> D-040: Productos, Marcas y Categorías comparten el patrón de alta/edición modal y sus páginas directas, sin cambios de servicios, permisos, auditoría ni modelo. Clientes y Proveedores siguen sin alta/edición implementada. Contrato y alcance: [ADMIN_FORMS.md](ADMIN_FORMS.md).
+
 > D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
 
 > D-038: `100.000,00` es el formato obligatorio de interfaz para todos los importes actuales y futuros. La persistencia mantiene decimales exactos y moneda según el modelo existente; no guarda separadores localizados ni cambia esquema, precisión o datos. Ver [MONEY_FORMAT.md](MONEY_FORMAT.md).

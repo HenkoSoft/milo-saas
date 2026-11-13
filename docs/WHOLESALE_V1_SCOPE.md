@@ -1,5 +1,32 @@
 # Alcance funcional — Módulo Mayorista V1
 
+> D-053 (2026-11-13): La corrección de navegación de Compras no amplía alcance: conserva borradores, recepción explícita, permisos, inventario e idempotencia. Ingreso y Consulta son recorridos de presentación del mismo módulo. Ver [navegación y pruebas](PURCHASES_MODAL.md).
+
+> D-052 (2026-11-13): Compras conserva alcance y permisos. La corrección de apertura modal no habilita operaciones nuevas ni modifica datos de negocio. La modalidad nativa se verifica con React real y fixtures de memoria. Ver [prueba modal real](PURCHASES_MODAL.md).
+
+> D-051 (2026-11-13): El ajuste visual y de rendimiento de Compras no amplía funcionalidad: conserva borrador, recepción, tenant y autorización. No habilita venta, deuda, fiscalidad ni pagos. Ver [mediciones, verificaciones y límites](PURCHASES_PERFORMANCE.md).
+
+> D-050 (2026-11-12): Comprobante, categor?a e IVA manual de Compras quedan disponibles tras aplicar exclusivamente la octava migraci?n autorizada a `milo_dev`, con respaldo externo y conservaci?n de datos verificados. Ocho migraciones aplicadas y ninguna pendiente. No ampl?a el alcance aprobado, autorizaci?n comercial de Customer, fiscalidad, N/C ni pagos. Las notas anteriores de despliegue pendiente son hist?ricas. Ver [registro](DECISIONS.md#d-050--despliegue-autorizado-de-detalles-de-compras).
+
+> D-049 (2026-11-12): reorganización administrativa de Compras en cinco destinos MILO. Continúa operativo V1 (séptima migración aplicada previamente), con referencia libre, borrador y recepción; la extensión de comprobante/categoría/IVA manual espera despliegue autorizado de la octava migración probada aislada. N/C sin operaciones; pagos permite consultar proveedores reales y bloquea cuenta corriente/pagos. No modifica autorización de Customer ni habilita venta, deuda, devolución o pago. Ver [contrato](PURCHASES_MODULE_RESTRUCTURE.md).
+
+> D-048 (2026-11-12): Compras administrativas a proveedores implementadas en código según [PURCHASES_V1_PROPOSAL.md](PURCHASES_V1_PROPOSAL.md): OWNER/ADMIN COMPANY, borrador sin stock y recepción completa transaccional en la sucursal seleccionada. Esta operación no es la compra mayorista del Customer ni modifica su autorización comercial, precios de venta o visibilidad del catálogo. No marca pagos ni crea documentos fiscales. Migración probada únicamente en base aislada; no aplicada a `milo_dev`. Las referencias históricas a ausencia de Compras administrativas quedan superadas por este alcance acotado; devoluciones, pagos y automatizaciones no están implementados.
+
+> D-047: la corrección del cliente Prisma de exportación no amplía permisos ni alcance mayorista. Mantiene la descarga aislada por tenant y no modifica clientes, proveedores ni autorizaciones comerciales.
+
+> D-046: transferencia Excel e impresión de fichas en Clientes/Proveedores, con OWNER/ADMIN COMPANY y tenant de sesión. Importar no aprueba clientes, concede precios privados ni habilita compras. No agrega reglas de crédito, facturación o módulos; pruebas de escritura solo aisladas. Contrato: [ADMIN_DATA_TRANSFER_PROPOSAL.md](ADMIN_DATA_TRANSFER_PROPOSAL.md).
+
+> D-045: Proveedores V1 administra fichas empresariales; su estructura fue autorizada y aplicada a milo_dev el 2026-11-11, con respaldo externo y datos previos intactos. Sin compra operativa ni acceso comercial por registrar un proveedor. Las referencias anteriores a Proveedores pendiente quedan superadas por [SUPPLIERS_V1_PROPOSAL.md](SUPPLIERS_V1_PROPOSAL.md).
+
+> D-044 (alcance corregido): [ADMIN_TABLES.md](ADMIN_TABLES.md) queda como referencia opcional de Clientes y Proveedores. El usuario retiró la obligación de repetir ese formato en otros listados actuales o futuros; no se modifican modelos, datos, permisos ni reglas comerciales.
+
+> D-043 (2026-11-11): ampliación de Clientes aprobada e implementada. La migración 20261111043000_expand_customer_commercial_profile fue autorizada expresamente y aplicada mediante Prisma Migrate a 127.0.0.1:5432/milo_dev, tras respaldo externo verificable. Quedaron cinco migraciones aplicadas y ninguna pendiente; las huellas de los campos originales de todas las tablas coinciden y los nuevos campos son consultables. El esquema anterior conserva su fallback básico; la ampliación ya está habilitada en milo_dev. Ver [CUSTOMERS_V1_EXPANSION_PROPOSAL.md](CUSTOMERS_V1_EXPANSION_PROPOSAL.md).
+
+
+> D-041: implementada la administración básica de Clientes con listado, búsqueda, paginación y modal compartido, solo OWNER/ADMIN COMPANY del tenant. Contacto v1 y alta REGISTERED sin autorización comercial; estados anteriores inalterados y JSON incompatible protegido. Concurrencia y auditoría transaccionales, sin cambios de esquema ni datos reales durante la tarea. Contrato aprobado: [CUSTOMERS_V1_PROPOSAL.md](CUSTOMERS_V1_PROPOSAL.md). Supera las referencias anteriores a Clientes sin implementar.
+
+> D-040: Productos, Marcas y Categorías comparten el patrón de alta/edición modal y sus páginas directas, sin cambios de servicios, permisos, auditoría ni modelo. Clientes y Proveedores siguen sin alta/edición implementada. Contrato y alcance: [ADMIN_FORMS.md](ADMIN_FORMS.md).
+
 > D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
 
 > D-038: los importes monetarios actuales y futuros del módulo, incluidos precios y totales cuando corresponda implementarlos, deben usar `100.000,00`. Norma global en [MONEY_FORMAT.md](MONEY_FORMAT.md). La presentación no habilita nuevas listas de precios, costos, impuestos, pagos, monedas ni reglas comerciales; aplicado actualmente a los campos de precio habitual y por presentación.
@@ -162,6 +189,8 @@ Las referencias a WhatsApp describen el enlace de contacto existente; no implica
 
 ### 6. Clientes mayoristas
 
+**Implementado en D-041:** administración básica de fichas en `/panel/clientes`, búsqueda, paginación, alta/edición modal y rutas directas. Solo OWNER/ADMIN COMPANY del tenant; nombre, correo, teléfono y dirección en contactData v1. Altas REGISTERED sin autorización comercial; estados previos inalterados y JSON histórico incompatible protegido. Sin modificar el esquema ni crear datos reales durante la implementación.
+
 **Incluido en V1**
 
 - Solicitud de acceso y aprobación manual por la empresa.
@@ -171,8 +200,8 @@ Las referencias a WhatsApp describen el enlace de contacto existente; no implica
 
 **Pendiente**
 
-- Implementar el flujo de solicitud, revisión y administración en la aplicación.
-- Definir los datos exactos del cliente y los estados operativos que no estén decididos.
+- Implementar el flujo de solicitud, revisión y aprobación comercial; el alta administrativa no lo sustituye.
+- Definir estados operativos adicionales a REGISTERED y campos adicionales al contrato mínimo de contacto aprobado en D-041.
 - Definir si el acceso seguirá iniciándose exclusivamente por WhatsApp o si tendrá otro canal aprobado.
 
 **Fuera de alcance por ahora**

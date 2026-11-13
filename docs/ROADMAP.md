@@ -1,5 +1,32 @@
 # Roadmap de la plataforma SaaS
 
+> D-053 (2026-11-13): Unificados nombres y navegación de Compras: Ingreso abre modal, Consulta solo lista, cierre directo retorna a consulta conservando query/scroll y resaltado activo único. Se mantienen las cinco opciones y límites funcionales. Ver [navegación y pruebas](PURCHASES_MODAL.md).
+
+> D-052 (2026-11-13): Corregido el recorrido de alta de Compras: Nueva compra desde listado, ruta ingresar/recarga con el mismo diálogo nativo. Pruebas Chrome de fondo inactivo, foco, descarte, cierre/refresco y scroll; no equivalen a persistencia con sesión real. Ver [prueba modal real](PURCHASES_MODAL.md).
+
+> D-051 (2026-11-13): Implementadas pestañas MILO, estimación local exacta sin solicitudes al editar y guardado de Compras en bloque. Mediciones aisladas comparadas antes/después; pendiente medir HTTP con sesión real y perfilar apertura de documentos de 100 filas. Sin ampliar alcance de N/C o pagos. Ver [mediciones, verificaciones y límites](PURCHASES_PERFORMANCE.md).
+
+> D-050 (2026-11-12): Completado el despliegue autorizado de la octava migraci?n de Compras en `milo_dev`: comprobante, categor?a e IVA manual disponibles seg?n el detector existente. Ocho migraciones aplicadas, ninguna pendiente; respaldo externo verificado y datos anteriores conservados. No se prob? escritura comercial ni sesi?n autenticada en esta tarea. N/C y pagos mantienen sus pendientes. Las notas anteriores de despliegue pendiente son hist?ricas. Ver [registro](DECISIONS.md#d-050--despliegue-autorizado-de-detalles-de-compras).
+
+> D-049 (2026-11-12): implementada reorganización de Compras en cinco entradas. Operativos ingreso/consulta V1 y búsqueda/paginación de proveedores para pagos. Comprobante estructurado, categoría e IVA manual implementados y probados en base aislada; despliegue de la octava migración pendiente de autorización. N/C carga/consulta son estructura bloqueada; pagos/cuenta corriente requieren reglas y modelo. No se calculan saldos. Ver [alcance y pendientes](PURCHASES_MODULE_RESTRUCTURE.md).
+
+> D-048 (2026-11-12): Compras V1 terminado en código: listado y filtros, borrador editable, recepción completa única, detalle y vínculo a inventario, costos históricos y stock por sucursal, OWNER/ADMIN COMPANY. Validación de recepción/concurrencia/rollback/aislamiento en base aislada y formulario/teclado en DOM. **Pendiente de despliegue:** autorizar y aplicar `20261112010000_add_purchases` a `milo_dev` en otra tarea; hasta entonces muestra aviso de esquema pendiente. Verificación visual real bloqueada por el control de URL del navegador. Fuera de V1: fracciones/conversiones, recepciones parciales, devoluciones/NC, pagos/cuenta corriente y facturación. Contrato: [PURCHASES_V1_PROPOSAL.md](PURCHASES_V1_PROPOSAL.md).
+
+> D-047: resuelto el fallo de exportación de Proveedores causado por un cliente Prisma antiguo en la API. Descarga confirmada por el usuario; pruebas de regresión de caché y diagnóstico seguro, sin cambios de datos ni migraciones.
+
+> D-046: implementadas plantilla/exportación XLSX, importación de altas con vista previa/confirmación y vista imprimible para guardar PDF en Clientes y Proveedores. Incluye F4 para Nuevo. Sin actualizaciones masivas, migración nueva ni cambios en datos reales durante el desarrollo. Contrato y límites: [ADMIN_DATA_TRANSFER_PROPOSAL.md](ADMIN_DATA_TRANSFER_PROPOSAL.md).
+
+> D-045: Proveedores V1 implementado y estructura habilitada en milo_dev tras autorización y aplicación de `20261111235000_add_suppliers` el 2026-11-11. Listado, búsqueda/paginación, modal de vista única compacta, edición, borrado protegido y sidebar autorizado. Compras, deudas y automatizaciones siguen fuera de esta implementación. Ver [SUPPLIERS_V1_PROPOSAL.md](SUPPLIERS_V1_PROPOSAL.md).
+
+> D-044 (alcance corregido): [ADMIN_TABLES.md](ADMIN_TABLES.md) queda como referencia opcional de Clientes y Proveedores. El usuario retiró la obligación de repetir ese formato en otros listados actuales o futuros; no se modifican modelos, datos, permisos ni reglas comerciales.
+
+> D-043 (2026-11-11): ampliación de Clientes aprobada e implementada. La migración 20261111043000_expand_customer_commercial_profile fue autorizada expresamente y aplicada mediante Prisma Migrate a 127.0.0.1:5432/milo_dev, tras respaldo externo verificable. Quedaron cinco migraciones aplicadas y ninguna pendiente; las huellas de los campos originales de todas las tablas coinciden y los nuevos campos son consultables. El esquema anterior conserva su fallback básico; la ampliación ya está habilitada en milo_dev. Ver [CUSTOMERS_V1_EXPANSION_PROPOSAL.md](CUSTOMERS_V1_EXPANSION_PROPOSAL.md).
+
+
+> D-041: implementada la administración básica de Clientes con listado, búsqueda, paginación y modal compartido, solo OWNER/ADMIN COMPANY del tenant. Contacto v1 y alta REGISTERED sin autorización comercial; estados anteriores inalterados y JSON incompatible protegido. Concurrencia y auditoría transaccionales, sin cambios de esquema ni datos reales durante la tarea. Contrato aprobado: [CUSTOMERS_V1_PROPOSAL.md](CUSTOMERS_V1_PROPOSAL.md). Supera las referencias anteriores a Clientes sin implementar.
+
+> D-040: Productos, Marcas y Categorías comparten el patrón de alta/edición modal y sus páginas directas, sin cambios de servicios, permisos, auditoría ni modelo. Clientes y Proveedores siguen sin alta/edición implementada. Contrato y alcance: [ADMIN_FORMS.md](ADMIN_FORMS.md).
+
 > D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
 
 > D-038: cada nueva implementación o modificación de un campo monetario debe cumplir [MONEY_FORMAT.md](MONEY_FORMAT.md): punto de miles, coma de centavos y dos decimales (`100.000,00`). Aplicado a precios habituales y por presentación; revisar la coherencia del área en cada etapa, sin dar por auditada toda la aplicación ni ampliar el alcance de módulos futuros.

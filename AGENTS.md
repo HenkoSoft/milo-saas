@@ -49,6 +49,20 @@ Configuración inicial: Argentina, ARS, español, `America/Argentina/Buenos_Aire
 - El formato localizado pertenece a la interfaz. Transportar y guardar decimales canónicos exactos, sin miles y con punto decimal; validar con Zod en servidor. No usar Number/parseFloat para dinero ni redondear, truncar o transformar un campo vacío en cero.
 - Esta regla no habilita nuevas monedas, importes negativos, conversiones, impuestos, costos ni módulos. Cantidades y factores tienen contratos propios.
 
+## Formularios administrativos
+
+Los formularios administrativos de alta/edición deben reutilizar el patrón de `docs/ADMIN_FORMS.md`: diálogo `RecordWorkspace`, estructura `RecordEditor`, pestañas opcionales y `EditorFooter` con Guardar/Cancelar fuera del cuerpo desplazable. Conservar rutas directas, foco, Escape, advertencia por cambios sin guardar y estado del listado al guardar. Aplicado a Productos, Marcas, Categorías y Clientes (D-041); Proveedores no tiene alta/edición implementada y no se crean pantallas para simularla. Reutilizar servicios y autorización existentes. Clientes conserva el contrato aprobado en `docs/CUSTOMERS_V1_PROPOSAL.md`: OWNER/ADMIN COMPANY, contacto versión 1, sin autorización comercial por el alta, estados previos inalterados y JSON incompatible protegido.
+
+## Tablas administrativas
+
+Clientes y Proveedores ofrecen Excel e impresión/PDF según `docs/ADMIN_DATA_TRANSFER_PROPOSAL.md` (D-046), aprobado para ambos módulos: OWNER/ADMIN COMPANY, datos siempre del tenant de sesión, importación de altas con vista previa y confirmación atómica, sin sobrescribir fichas existentes. Usar las utilidades compartidas de transferencia, validación fiscal y formatos; no persistir archivos de usuarios ni probar importaciones sobre datos reales. Impresión/PDF usa el diálogo del navegador. Este alcance no convierte el formato de sus tablas en una norma general.
+
+Proveedores V1 está implementado según `docs/SUPPLIERS_V1_PROPOSAL.md` (D-045), con datos y acceso aprobados, OWNER/ADMIN COMPANY y migración probada en base aislada y aplicada posteriormente a `milo_dev` el 2026-11-11 con autorización expresa, respaldo y verificación de integridad. Esta actualización supera la referencia anterior a Proveedores sin formularios. Reutilizar el modal y las acciones compartidas; no habilitar compras, deudas, saldos ni condiciones de pago automatizadas.
+
+Compras V1 tiene contrato aprobado e implementación según `docs/PURCHASES_V1_PROPOSAL.md` (D-048), superando la restricción anterior de no habilitar Compras para este alcance específico. Solo OWNER/ADMIN COMPANY, borradores sin stock y recepción completa única en unidad base entera, con costos Decimal, stock por sucursal y auditoría transaccional. No incluye pagos, deuda, devoluciones, notas de crédito ni documentos fiscales. La migración `20261112010000_add_purchases` fue autorizada y aplicada a `milo_dev` con respaldo verificado en una tarea posterior. D-049 reorganiza el módulo según `docs/PURCHASES_MODULE_RESTRUCTURE.md`: ingreso/consulta V1 operativos; comprobante/categoría/IVA manual preparados con octava migración `20261112060000_purchase_document_details` autorizada y aplicada a `milo_dev` el 2026-11-12 con respaldo externo verificado (D-050), ocho migraciones aplicadas y ninguna pendiente; comprobante/categor?a/IVA manual disponibles, con datos anteriores conservados. N/C y pagos sin escrituras ni saldos; pagos consulta proveedores reales. Conservar las siete migraciones anteriores y datos reales.
+
+`docs/ADMIN_TABLES.md` (D-044, alcance corregido) describe la presentación actual de Clientes y Proveedores como referencia opcional. El usuario retiró la obligación general de repetir ese formato en todos los listados actuales y futuros; cada módulo puede definir su distribución según sus necesidades. Se mantienen la identidad visual global MILO, accesibilidad, permisos y funcionalidades existentes; esta corrección no habilita campos, ordenamiento ficticio ni eliminación adicional.
+
 ## Seguridad, privacidad e integridad
 
 - Validar entradas externas con Zod en servidor. Autenticar y autorizar cada operación server-side; denegar por defecto.

@@ -31,6 +31,7 @@ globalThis[Symbol.for("milo.dashboard-test")] = {
 const policy = moduleURL(await readFile(new URL("../lib/panel/company-permission.ts", import.meta.url), "utf8"));
 const navURL = moduleURL(await readFile(new URL("../lib/panel/navigation.ts", import.meta.url), "utf8"));
 const nav = await import(navURL);
+const purchaseNavigationURL = moduleURL((await readFile(new URL("../components/panel/purchase-navigation.tsx", import.meta.url), "utf8")).replace('from "react"', `from ${JSON.stringify(import.meta.resolve("react"))}`));
 let source = await readFile(new URL("../lib/panel/dashboard.ts", import.meta.url), "utf8");
 for (const [from, to] of [
   ['import "server-only";', ""],
@@ -55,9 +56,30 @@ for (const [from, to] of [
   ['from "@/components/icons"', `from ${JSON.stringify(iconsURL)}`],
   ['from "@/components/auth/sign-out-button"', `from ${JSON.stringify(signOutURL)}`],
   ['from "@/lib/panel/navigation"', `from ${JSON.stringify(navURL)}`],
+  ['from "./purchase-navigation"', `from ${JSON.stringify(purchaseNavigationURL)}`],
 ]) { assert.ok(shell.includes(from)); shell = shell.replace(from, to); }
 const { PanelShell } = await import(moduleURL(shell));
-const full = { company: true, catalog: true, branches: true, inventory: true }, none = { company: false, catalog: false, branches: false, inventory: false };
+const full = { company: true, catalog: true, branches: true, inventory: true, customers: true, suppliers: true, purchases: true }, none = { company: false, catalog: false, branches: false, inventory: false, customers: false, suppliers: false, purchases: false };
+
+test("purchase navigation highlights exactly one of five destinations using route and modal state", () => {
+  const links = nav.panelNavigation(full).find(item => item.label === "Compras").links;
+  assert.equal(links.length, 5);
+  for (const [path, mode, expected] of [
+    ["/panel/compras", null, "/panel/compras"],
+    ["/panel/compras", "create", "/panel/compras/ingresar"],
+    ["/panel/compras/ingresar", null, "/panel/compras/ingresar"],
+    ["/panel/compras/ingresar", "closed", "/panel/compras"],
+    ["/panel/compras", "edit", "/panel/compras"],
+    ["/panel/compras/nueva", null, "/panel/compras/ingresar"],
+    ["/panel/compras/notas-credito/nueva", null, "/panel/compras/notas-credito/nueva"],
+    ["/panel/compras/notas-credito", null, "/panel/compras/notas-credito"],
+    ["/panel/compras/pagos", "closed", "/panel/compras/pagos"],
+  ]) {
+    const active = links.filter(link => nav.isActiveRoute(nav.purchaseNavigationPath(path, mode), link.href));
+    assert.deepEqual(active.map(link => link.href), [expected]);
+  }
+  assert.equal(nav.purchaseNavigationPath("/panel/productos", "create"), "/panel/productos");
+});
 
 test("dashboard totals count only tenant records, include every state and never query sales/orders", async () => {
   for (const code of ["OWNER", "ADMIN"]) {
@@ -85,6 +107,13 @@ test("ERP navigation keeps only implemented authorized links and disables pendin
   const items = nav.panelNavigation(full);
   assert.deepEqual(items.map(i => i.label), ["Inicio", "Artículos", "Clientes", "Compras", "Ventas", "Proveedores", "Inventario", "Caja", "Reportes", "Administración", "Herramientas", "Ayuda"]);
   items.filter(i => i.kind === "pending").forEach(i => assert.equal("href" in i, false));
+  assert.ok(items.some(i => i.kind === "link" && i.href === "/panel/clientes"));
+  const purchases = items.find(i => i.label === "Compras");
+  assert.equal(purchases.kind, "group");
+  assert.deepEqual(purchases.links.map(l => l.label), ["Ingreso de Mercadería", "N/C Proveedor (Carga)", "Consulta de Compras", "Consulta de N/C", "Pagos a Proveedores"]);
+  for (const path of purchases.links.map(l => l.href)) assert.equal(purchases.links.filter(l => nav.isActiveRoute(path, l.href)).length, 1);
+  assert.equal(nav.panelNavigation(none).some(i => i.label === "Compras"), false);
+  assert.equal(nav.panelNavigation(none).some(i => i.label === "Clientes"), false);
   for (const link of [{ href: "/panel" }, ...nav.quickLinks(full)]) await fileAccess(new URL(`../app${link.href}/page.tsx`, import.meta.url));
   assert.deepEqual(nav.quickLinks(none), []); assert.equal(nav.panelNavigation(none).some(i => i.kind === "group"), false);
   assert.equal(nav.isActiveRoute("/panel/productos/nuevo", "/panel/productos"), true); assert.equal(nav.isActiveRoute("/panel/productos", "/panel"), false); assert.equal(nav.isActiveRoute("/panel/productos-falso", "/panel/productos"), false);
@@ -103,17 +132,18 @@ test("rendered dashboard has four indicators, real zero counts, empty sales and 
   const html = renderToStaticMarkup(createElement(Dashboard, { context: context(), totals: { status: "ok", customers: 0, products: 0 }, permissions: full, scopeLabel: "Alcance empresarial" }));
   assert.equal((html.match(/<article/g) ?? []).length, 4); assert.equal((html.match(/class="milo-dash-number">0</g) ?? []).length, 2);
   assert.match(html, /Ventas del día/); assert.match(html, /Pedidos de hoy/); assert.match(html, /Sin datos disponibles/); assert.match(html, /pedidos no se consideran ventas cobradas/);
-  assert.doesNotMatch(html, /href="\/panel\/(ventas|pedidos|clientes)"/); assert.doesNotMatch(html, /\$|0,00|0\.00|<polyline/);
+  assert.doesNotMatch(html, /href="\/panel\/(ventas|pedidos)"/); assert.doesNotMatch(html, /\$|0,00|0\.00|<polyline/);
+  assert.match(html, /href="\/panel\/clientes"/);
   const restricted = renderToStaticMarkup(createElement(Dashboard, { context: context("a", "SALES"), totals: { status: "restricted" }, permissions: none, scopeLabel: "Sin sucursal seleccionada" }));
   assert.doesNotMatch(restricted, /milo-dash-number|class="milo-dash-shortcut"/); assert.match(restricted, /tus roles actuales/);
 });
 
 test("ERP markup has accessible disclosures, active route, real signout, disabled pending buttons and role filtering", () => {
   reset(); path = "/panel/productos/nuevo";
-  const props = { companyName: "Memory company", userName: "Memory user", scopeLabel: "Alcance empresarial", canManageCompany: true, canManageCatalog: true, canManageBranches: true, canReadInventory: true, children: createElement("h1", null, "Preview") };
+  const props = { companyName: "Memory company", userName: "Memory user", scopeLabel: "Alcance empresarial", canManageCompany: true, canManageCatalog: true, canManageBranches: true, canReadInventory: true, canManageCustomers: true, canManageSuppliers: true, children: createElement("h1", null, "Preview") };
   const html = renderToStaticMarkup(createElement(PanelShell, props));
   assert.match(html, /Powered by HenkoSoft/); assert.match(html, /Cerrar sesión/); assert.match(html, /aria-expanded="true" aria-controls="panel-articles"/); assert.match(html, /href="\/panel\/productos"[^>]*aria-current="page"/);
   assert.match(html, /id="panel-administration"[^>]*hidden/); assert.match(html, /id="panel-content"/); assert.match(html, /aria-label="Contraer menú lateral"/);
-  assert.match(html, /class="milo-erp-nav-item milo-erp-pending" disabled/); assert.doesNotMatch(html, /href="\/panel\/(ventas|clientes|compras|reportes)"/);
-  const limited = renderToStaticMarkup(createElement(PanelShell, { ...props, canManageCompany: false, canManageCatalog: false, canManageBranches: false, canReadInventory: false })); assert.doesNotMatch(limited, /id="panel-articles"|id="panel-administration"|href="\/panel\/inventario"/);
+  assert.match(html, /class="milo-erp-nav-item milo-erp-pending" disabled/); assert.doesNotMatch(html, /href="\/panel\/(ventas|compras|reportes)"/);
+  const limited = renderToStaticMarkup(createElement(PanelShell, { ...props, canManageCompany: false, canManageCatalog: false, canManageBranches: false, canReadInventory: false, canManageCustomers: false, canManageSuppliers: false })); assert.doesNotMatch(limited, /id="panel-articles"|id="panel-administration"|href="\/panel\/inventario"/);
 });

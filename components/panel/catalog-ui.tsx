@@ -9,7 +9,7 @@ export function CatalogHeading({ title, description, href, label }: { title: str
   return <section className="milo-panel-welcome"><div><p className="milo-card-kicker">ADMINISTRACIÓN / CATÁLOGO</p><h1>{title}</h1><p>{description}</p></div>{href && <Link className="milo-primary-button" href={href}>{label}</Link>}</section>;
 }
 export function CatalogSearch({ q, path }: { q: string; path: string }) {
-  return <form action={path} method="get" className="milo-catalog-search"><div className="milo-field"><label htmlFor="catalog-search">Buscar</label><input id="catalog-search" name="q" type="search" defaultValue={q} maxLength={100} placeholder={path === "/panel/productos" ? "Nombre o SKU" : "Nombre"} /></div><button className="milo-secondary-button">Buscar</button>{q && <Link className="milo-secondary-button" href={path}>Limpiar</Link>}</form>;
+  return <form action={path} method="get" className="milo-catalog-search"><div className="milo-field"><label htmlFor="catalog-search">Buscar</label><input id="catalog-search" name="q" type="search" defaultValue={q} maxLength={100} placeholder={path === "/panel/productos" ? "Nombre o SKU" : path === "/panel/clientes" ? "Nombre, correo o teléfono" : "Nombre"} /></div><button className="milo-secondary-button">Buscar</button>{q && <Link className="milo-secondary-button" href={path}>Limpiar</Link>}</form>;
 }
 export function CatalogPagination({ path, page, pages, q }: { path: string; page: number; pages: number; q: string }) {
   const href = (n: number) => `${path}?${new URLSearchParams({ q, page: String(n) })}`;

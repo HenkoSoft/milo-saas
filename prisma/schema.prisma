@@ -121,6 +121,12 @@ model Tenant {
   stockMovements         StockMovement[]
   auditEvents            AuditEvent[]
   storefront             TenantStorefront?
+  customerCounter        CustomerCounter?
+  suppliers              Supplier[]
+  supplierCounter        SupplierCounter?
+  purchases Purchase[]
+  purchaseLines PurchaseLine[]
+  purchaseCounter PurchaseCounter?
 
   @@map("tenants")
 }
@@ -160,6 +166,8 @@ model UserProfile {
   confirmedPayments      PaymentRecord[]         @relation("PaymentConfirmer")
   stockMovements         StockMovement[]         @relation("StockMovementActor")
   auditEvents            AuditEvent[]            @relation("AuditEventActor")
+  createdPurchases Purchase[] @relation("PurchaseCreator")
+  receivedPurchases Purchase[] @relation("PurchaseReceiver")
 
   @@unique([tenantId, id])
   @@index([tenantId])
@@ -182,6 +190,8 @@ model Branch {
   @@unique([tenantId, id])
   @@index([tenantId])
   @@map("branches")
+  purchases Purchase[]
+  purchaseLines PurchaseLine[]
 }
 
 model RoleDefinition {
@@ -276,6 +286,7 @@ model Product {
   @@index([tenantId, brandId])
   @@index([tenantId, isPublished])
   @@map("products")
+  purchaseLines PurchaseLine[]
 }
 
 model UnitOfMeasure {
@@ -345,10 +356,72 @@ model WholesalePrice {
   @@map("wholesale_prices")
 }
 
+model SupplierCounter {
+  tenantId   String @id @db.Uuid
+  lastNumber Int    @default(0)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@map("supplier_counters")
+}
+
+model Supplier {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId         String   @db.Uuid
+  commercialNumber Int
+  legalName        String?  @db.VarChar(200)
+  commercialName   String?  @db.VarChar(200)
+  cuit             String?  @db.VarChar(11)
+  vatCondition     String?  @db.VarChar(2)
+  contactName      String?  @db.VarChar(200)
+  phone            String?  @db.VarChar(50)
+  whatsapp         String?  @db.VarChar(50)
+  email            String?  @db.VarChar(254)
+  address          String?  @db.VarChar(400)
+  postalCode       String?  @db.VarChar(20)
+  city             String?  @db.VarChar(100)
+  province         String?  @db.VarChar(100)
+  country          String?  @db.VarChar(100)
+  internalNotes    String?  @db.VarChar(2000)
+  createdAt        DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @db.Timestamptz(6)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([tenantId, id])
+  @@unique([tenantId, commercialNumber])
+  @@index([tenantId, legalName])
+  @@index([tenantId, commercialName])
+  @@index([tenantId, cuit])
+  @@map("suppliers")
+  purchases Purchase[]
+}
+
+model CustomerCounter {
+  tenantId   String @id @db.Uuid
+  lastNumber Int    @default(0)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@map("customer_counters")
+}
+
 model Customer {
   id          String   @id @default(uuid()) @db.Uuid
   tenantId    String   @db.Uuid
   contactData Json?    @db.JsonB
+  commercialNumber Int?
+  commercialDataVersion Int?
+  legalName String? @db.VarChar(200)
+  contactName String? @db.VarChar(200)
+  documentType String? @db.VarChar(4)
+  documentNumber String? @db.VarChar(11)
+  vatCondition String? @db.VarChar(2)
+  phone String? @db.VarChar(50)
+  mobilePhone String? @db.VarChar(50)
+  whatsapp String? @db.VarChar(50)
+  email String? @db.VarChar(254)
+  instagram String? @db.VarChar(100)
+  address String? @db.VarChar(400)
+  postalCode String? @db.VarChar(20)
+  city String? @db.VarChar(100)
+  province String? @db.VarChar(100)
+  country String? @db.VarChar(100)
+  internalNotes String? @db.VarChar(2000)
   status      String
   createdAt   DateTime @default(now()) @db.Timestamptz(6)
   updatedAt   DateTime @updatedAt @db.Timestamptz(6)
@@ -357,6 +430,9 @@ model Customer {
   orders WholesaleOrder[]
 
   @@unique([tenantId, id])
+  @@unique([tenantId, commercialNumber])
+  @@index([tenantId, legalName])
+  @@index([tenantId, documentNumber])
   @@index([tenantId, status])
   @@map("customers")
 }
@@ -494,6 +570,7 @@ model StockMovement {
   reason        String?  @db.VarChar(1000)
   sourceReference String? @db.VarChar(200)
   sourceOrderId String?  @db.Uuid
+  purchaseLineId String? @db.Uuid
   actorUserId   String   @db.Uuid
   occurredAt    DateTime @default(now()) @db.Timestamptz(6)
 
@@ -505,6 +582,8 @@ model StockMovement {
 
   @@unique([tenantId, id])
   @@index([tenantId, branchId, productId, occurredAt])
+  purchaseLine PurchaseLine? @relation(fields: [tenantId, branchId, productId, purchaseLineId], references: [tenantId, branchId, productId, id], onDelete: Restrict, onUpdate: Restrict)
+  @@unique([tenantId, purchaseLineId])
   @@index([tenantId, branchId, sourceOrderId])
   @@map("stock_movements")
 }
@@ -523,4 +602,74 @@ model AuditEvent {
 
   @@index([tenantId, occurredAt])
   @@map("audit_events")
+}
+
+model PurchaseCounter {
+  tenantId String @id @db.Uuid
+  lastNumber Int @default(0)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  @@map("purchase_counters")
+}
+model Purchase {
+  id String @id @db.Uuid
+  tenantId String @db.Uuid
+  commercialNumber Int
+  supplierId String @db.Uuid
+  branchId String @db.Uuid
+  status String @default("DRAFT") @db.VarChar(8)
+  revision Int @default(1)
+  date DateTime @db.Date
+  currency String @default("ARS") @db.Char(3)
+  reference String? @db.VarChar(200)
+  documentType String? @db.VarChar(4)
+  pointOfSale String? @db.VarChar(5)
+  documentNumber String? @db.VarChar(8)
+  purchaseCategory String? @db.VarChar(100)
+  taxAmount Decimal? @db.Decimal(18,2)
+  notes String? @db.VarChar(2000)
+  total Decimal @db.Decimal(18,2)
+  createHash String @db.Char(64)
+  receiveOperationId String? @db.Uuid
+  receiveHash String? @db.Char(64)
+  supplierSnapshot String? @db.VarChar(220)
+  createdById String @db.Uuid
+  receivedById String? @db.Uuid
+  receivedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  supplier Supplier @relation(fields: [tenantId,supplierId], references: [tenantId,id], onDelete: Restrict, onUpdate: Restrict)
+  branch Branch @relation(fields: [tenantId,branchId], references: [tenantId,id], onDelete: Restrict, onUpdate: Restrict)
+  creator UserProfile @relation("PurchaseCreator", fields: [tenantId,createdById], references: [tenantId,id], onDelete: Restrict, onUpdate: Restrict)
+  receiver UserProfile? @relation("PurchaseReceiver", fields: [tenantId,receivedById], references: [tenantId,id], onDelete: Restrict, onUpdate: Restrict)
+  lines PurchaseLine[]
+  @@unique([tenantId,id])
+  @@unique([tenantId,branchId,id])
+  @@unique([tenantId,commercialNumber])
+  @@unique([tenantId,receiveOperationId])
+  @@index([tenantId,date,id])
+  @@map("purchases")
+}
+model PurchaseLine {
+  id String @id @db.Uuid
+  tenantId String @db.Uuid
+  purchaseId String @db.Uuid
+  branchId String @db.Uuid
+  productId String @db.Uuid
+  position Int
+  sku String
+  name String
+  baseUnitCode String
+  quantity Decimal @db.Decimal(18,3)
+  unitCost Decimal @db.Decimal(18,2)
+  subtotal Decimal @db.Decimal(18,2)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  purchase Purchase @relation(fields: [tenantId,branchId,purchaseId], references: [tenantId,branchId,id], onDelete: Restrict, onUpdate: Restrict)
+  branch Branch @relation(fields: [tenantId,branchId], references: [tenantId,id], onDelete: Restrict, onUpdate: Restrict)
+  product Product @relation(fields: [tenantId,productId], references: [tenantId,id], onDelete: Restrict, onUpdate: Restrict)
+  movements StockMovement[]
+  @@unique([tenantId,branchId,productId,id])
+  @@unique([tenantId,purchaseId,position])
+  @@index([tenantId,productId])
+  @@map("purchase_lines")
 }

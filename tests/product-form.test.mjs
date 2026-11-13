@@ -4,6 +4,7 @@ import test from "node:test";
 import ts from "typescript";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { recordEditorURL } from "./record-editor-loader.mjs";
 
 function moduleURL(source) {
   const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText.replace('from "react/jsx-runtime"', `from ${JSON.stringify(import.meta.resolve("react/jsx-runtime"))}`);
@@ -21,6 +22,7 @@ for (const [from, to] of [
   ['import { createProduct, updateProduct } from "@/app/panel/productos/actions";', 'const { createProduct, updateProduct } = globalThis[Symbol.for("milo.product-form-test")];'],
   ['from "@/lib/catalog/quick-sale"', `from ${JSON.stringify(quickSale)}`],
   ['from "@/lib/catalog/price-format"', `from ${JSON.stringify(priceFormat)}`],
+  ['from "./record-editor"', `from ${JSON.stringify(recordEditorURL)}`],
 ]) { assert.ok(source.includes(from)); source = source.replace(from, to); }
 const { ProductForm } = await import(moduleURL(source));
 const version = "2026-11-09T00:00:00.000Z";
@@ -64,13 +66,13 @@ test("missing UN and ambiguous existing presentations never imply a default unit
 test("editor tabs preserve all submitted fields and the footer submits the principal form outside the scroll body", () => {
   const html = render({ options, onCancel() {}, onSaved() {} });
   const formId = html.match(/<form id="([^"]+)"/)[1];
-  assert.match(html, /role="tablist" aria-label="Ficha del producto"/);
+  assert.match(html, /role="tablist" aria-label="Secciones del formulario"/);
   assert.equal((html.match(/role="tab"/g) ?? []).length, 2);
   assert.match(html, /aria-selected="true"[^>]*>Datos/);
   assert.match(html, /aria-selected="false"[^>]*>Precios/);
   assert.match(html, /data-tab="prices" hidden/);
   for (const field of ["name", "sku", "description", "categoryId", "brandId", "isPublished", "amount", "currency", "mode"]) assert.ok(html.includes(`name="${field}"`), field);
-  assert.ok(html.indexOf("</form>") < html.indexOf('class="milo-product-editor-footer"'));
+  assert.ok(html.indexOf("</form>") < html.indexOf('class="milo-record-editor-footer"'));
   assert.ok(html.includes(`form="${formId}"`));
   assert.match(html, /type="button">Cancelar/);
   assert.match(html, />Guardar<\/button>/);

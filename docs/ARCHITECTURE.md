@@ -1,5 +1,32 @@
 # Arquitectura SaaS multi-tenant
 
+> D-053 (2026-11-13): El sidebar de Compras coordina solo estado/control de UI con RecordWorkspace: Ingreso abre el modal existente y Consulta mantiene la lista; resaltado por ruta y estado. No se comparten datos de negocio ni se agrega caché. Ver [navegación y pruebas](PURCHASES_MODAL.md).
+
+> D-052 (2026-11-13): Compras abre alta con RecordWorkspace/showModal sobre PurchaseList. La ruta ingresar y el alias nueva reutilizan el listado y la misma apertura inicial; Productos/Clientes conservan opciones predeterminadas. Ver [prueba modal real](PURCHASES_MODAL.md).
+
+> D-051 (2026-11-13): Compras reutiliza pestañas MILO y el modal compartido; estimación local exacta sin IO ni caché, filas memoizadas y guardado de renglones en bloque dentro de la misma transacción. Se conservan permisos, locks, auditoría y recepción. Ver [mediciones, verificaciones y límites](PURCHASES_PERFORMANCE.md).
+
+> D-050 (2026-11-12): Compras dispone de comprobante, categor?a e IVA manual: la migraci?n `20261112060000_purchase_document_details` fue aplicada con autorizaci?n expresa mediante Prisma Migrate a `127.0.0.1:5432/milo_dev`. El detector existente devuelve `documentReady=true`. Se mantienen autorizaci?n OWNER/ADMIN COMPANY, aislamiento y l?mites de N/C/pagos. Las notas anteriores de despliegue pendiente son hist?ricas. Ver [registro](DECISIONS.md#d-050--despliegue-autorizado-de-detalles-de-compras).
+
+> D-049 (2026-11-12): Compras se organiza en Ingreso de Mercadería, N/C Proveedor (Carga), Consulta de Compras, Consulta de N/C y Pagos a Proveedores. Reutiliza MILO/RecordWorkspace/RecordEditor y autorización OWNER/ADMIN COMPANY. Ingreso/consulta V1 conservan transacciones, stock e idempotencia; N/C sin escrituras y pagos con consulta real de proveedores, sin ledger ni saldos. Metadatos e IVA manual preparados con migración adicional y fallback V1. Ver [contrato y límites](PURCHASES_MODULE_RESTRUCTURE.md).
+
+> D-048 (2026-11-12): Compras V1 implementado bajo contrato aprobado [PURCHASES_V1_PROPOSAL.md](PURCHASES_V1_PROPOSAL.md). `/panel/compras`, modal/rutas directas, búsqueda/filtros/paginación y detalle; OWNER/ADMIN COMPANY y tenant resueltos en servidor. Borradores sin stock; recepción completa con bloqueo de documento/productos en orden estable, Decimal, movimientos/saldos/auditoría atómicos e idempotencia. Reutiliza el editor/pie compartidos. Migración `20261112010000_add_purchases` probada solo en base aislada; no aplicada a `milo_dev`. Esta actualización supera referencias históricas a Compras no implementado; pagos/devoluciones/fiscalidad siguen fuera de alcance.
+
+> D-047: el singleton Prisma reutiliza clientes solo con constructor y delegados administrativos vigentes. Se corrigió la API de exportación afectada por metadatos antiguos y se recargó Next.js; PostgreSQL y datos permanecen intactos. Ver DECISIONS.md.
+
+> D-046: Clientes/Proveedores comparten barra, XLSX y vista de impresión, con autorización/membresía/filtros existentes, respuestas privadas y confirmación de importación atómica. Sin servicios externos ni migraciones. Contrato: [ADMIN_DATA_TRANSFER_PROPOSAL.md](ADMIN_DATA_TRANSFER_PROPOSAL.md).
+
+> D-045: Proveedores V1 dispone de listado/modal compartidos, OWNER/ADMIN COMPANY, aislamiento, concurrencia y auditoría. Migración `20261111235000_add_suppliers` autorizada y aplicada a milo_dev el 2026-11-11 mediante Prisma Migrate, con respaldo externo y verificación de integridad. Seis migraciones aplicadas, ninguna pendiente. Contrato: [SUPPLIERS_V1_PROPOSAL.md](SUPPLIERS_V1_PROPOSAL.md). No implementa Compras.
+
+> D-044 (alcance corregido): [ADMIN_TABLES.md](ADMIN_TABLES.md) queda como referencia opcional de Clientes y Proveedores. El usuario retiró la obligación de repetir ese formato en otros listados actuales o futuros; no se modifican modelos, datos, permisos ni reglas comerciales.
+
+> D-043 (2026-11-11): ampliación de Clientes aprobada e implementada. La migración 20261111043000_expand_customer_commercial_profile fue autorizada expresamente y aplicada mediante Prisma Migrate a 127.0.0.1:5432/milo_dev, tras respaldo externo verificable. Quedaron cinco migraciones aplicadas y ninguna pendiente; las huellas de los campos originales de todas las tablas coinciden y los nuevos campos son consultables. El esquema anterior conserva su fallback básico; la ampliación ya está habilitada en milo_dev. Ver [CUSTOMERS_V1_EXPANSION_PROPOSAL.md](CUSTOMERS_V1_EXPANSION_PROPOSAL.md).
+
+
+> D-041: implementada la administración básica de Clientes con listado, búsqueda, paginación y modal compartido, solo OWNER/ADMIN COMPANY del tenant. Contacto v1 y alta REGISTERED sin autorización comercial; estados anteriores inalterados y JSON incompatible protegido. Concurrencia y auditoría transaccionales, sin cambios de esquema ni datos reales durante la tarea. Contrato aprobado: [CUSTOMERS_V1_PROPOSAL.md](CUSTOMERS_V1_PROPOSAL.md). Supera las referencias anteriores a Clientes sin implementar.
+
+> D-040: Productos, Marcas y Categorías comparten el patrón de alta/edición modal y sus páginas directas, sin cambios de servicios, permisos, auditoría ni modelo. Clientes y Proveedores siguen sin alta/edición implementada. Contrato y alcance: [ADMIN_FORMS.md](ADMIN_FORMS.md).
+
 > D-039: el plan de activación se suministra privadamente por variables MILO_ACTIVATION_*, sin datos personales ni identificadores reales en el código. Se conservan journals y evidencias fuera de Git; las referencias históricas a un plan fijo quedan superadas. No se ejecuta activación ni se modifican datos en esta preparación. Ver DECISIONS.md y scripts/activation/README.md.
 
 > D-038: todo campo monetario actual y futuro usa `100.000,00` en la interfaz. Reutilizar formato/conversión compartidos y conservar decimales canónicos exactos y Zod en servidor. Norma global: [MONEY_FORMAT.md](MONEY_FORMAT.md); aplicada actualmente a precios habituales y por presentación, sin declarar auditadas otras pantallas.

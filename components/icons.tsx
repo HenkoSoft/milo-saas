@@ -2,6 +2,10 @@ export function ArrowIcon({ diagonal = false }: { diagonal?: boolean }) {
   return <svg className="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h16m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
+export function EditIcon({ readOnly = false }: { readOnly?: boolean }) {
+  return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d={readOnly ? "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Zm13 0a3 3 0 1 0-6 0 3 3 0 0 0 6 0Z" : "m18 2 4 4-14 14-6 2 2-6L18 2Zm-3 3 4 4"} stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
 export function CapabilityIcon({ kind = "grid" }: { kind?: "grid" | "people" | "branch" | "box" | "order" | "shield" }) {
   const paths = {
     grid: "M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z",

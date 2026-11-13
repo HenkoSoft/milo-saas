@@ -1,0 +1,117 @@
+// Explicitly local and isolated. No connection or writes to milo_dev; no Docker commands.
+import "dotenv/config";
+import "../activation/register-loader.mjs";
+import pg from "pg";
+import assert from "node:assert/strict";
+import { randomBytes, randomUUID } from "node:crypto";
+import { readFile, readdir } from "node:fs/promises";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { supplierModules } from "../../tests/suppliers-loader.mjs";
+
+if (process.argv.slice(2).join(" ") !== "--run-isolated") {
+  console.log("Use --run-isolated to create, test and remove only an owned temporary PostgreSQL database.");
+  process.exit(0);
+}
+let admin, db, prisma, name, marker, created=false, phase="preflight";
+try {
+  const {PrismaClient}=await import("../../generated/prisma/client.ts");
+  const source=new URL(process.env.DATABASE_URL);
+  assert.ok(["postgres:","postgresql:"].includes(source.protocol));assert.ok(["localhost","127.0.0.1"].includes(source.hostname));assert.equal(source.port||"5432","5432");assert.equal(source.pathname,"/milo_dev");
+  assert.ok([...source.searchParams].every(([k,v])=>k==="schema"&&v==="public"));
+  source.hostname="127.0.0.1";const adminURL=new URL(source);adminURL.pathname="/postgres";
+  admin=new pg.Client({connectionString:adminURL.toString(),connectionTimeoutMillis:5000});await admin.connect();assert.equal((await admin.query("SELECT current_database() AS name")).rows[0].name,"postgres");
+  name=`milo_supplier_test_${randomBytes(6).toString("hex")}`;assert.match(name,/^milo_supplier_test_[a-f0-9]{12}$/);marker=`MILO isolated supplier test ${randomUUID()}`;
+  phase="create-owned-isolated-database";await admin.query(`CREATE DATABASE "${name}" TEMPLATE template0`);created=true;await admin.query(`COMMENT ON DATABASE "${name}" IS '${marker}'`);
+  const isolated=new URL(source);isolated.pathname="/"+name;db=new pg.Client({connectionString:isolated.toString()});await db.connect();assert.equal((await db.query("SELECT current_database() AS name")).rows[0].name,name);
+  assert.equal((await db.query("SELECT count(*)::int AS n FROM pg_tables WHERE schemaname='public'")).rows[0].n,0);
+  const migrations=new URL("../../prisma/migrations/",import.meta.url),names=["20261108225754_init","20261109023000_add_better_auth","20261109150000_add_tenant_storefront","20261109220000_add_inventory_manual_trace","20261111043000_expand_customer_commercial_profile","20261111235000_add_suppliers"];
+  assert.deepEqual((await readdir(migrations,{withFileTypes:true})).filter(d=>d.isDirectory()).map(d=>d.name).sort(),names);
+  phase="five-previous-migrations-only-in-isolated";for(const migration of names.slice(0,5))await db.query(await readFile(new URL(migration+"/migration.sql",migrations),"utf8"));
+  prisma=new PrismaClient({adapter:new PrismaPg({connectionString:isolated.toString()})});
+  const tenants=[await prisma.tenant.create({data:{commercialName:"Isolated supplier A"}}),await prisma.tenant.create({data:{commercialName:"Isolated supplier B"}})];
+  const roles=[await prisma.roleDefinition.create({data:{code:"OWNER",name:"Owner fixture",assignmentScope:"COMPANY"}}),await prisma.roleDefinition.create({data:{code:"ADMIN",name:"Admin fixture",assignmentScope:"COMPANY"}})];
+  const profiles=[],assignments=[];
+  for(const [index,tenant] of tenants.entries()){
+    const auth=await prisma.authUser.create({data:{id:randomUUID(),name:"Isolated supplier fixture",email:`supplier-${index}@fixture.invalid`}});
+    const profile=await prisma.userProfile.create({data:{tenantId:tenant.id,authUserId:auth.id}});profiles.push(profile);
+    assignments.push(await prisma.userRoleAssignment.create({data:{tenantId:tenant.id,userProfileId:profile.id,roleId:roles[index].id,assignmentScope:"COMPANY"}}));
+  }
+  await prisma.customer.create({data:{tenantId:tenants[0].id,commercialNumber:1,commercialDataVersion:1,status:"HISTORICAL_FIXTURE",contactName:"Customer witness",internalNotes:"Untouched fixture"}});
+  const context=(i=0,code=i?"ADMIN":"OWNER")=>({authUserId:profiles[i].authUserId,profileId:profiles[i].id,tenant:{id:tenants[i].id},assignments:[{code,scope:"COMPANY",branch:null}]});
+  let access={status:"allowed",context:context()};
+  const {service,fields,storage}=await supplierModules({prisma,getPanelAccess:async()=>access});
+  const form=extra=>{const result=new FormData();for(const [key,value] of Object.entries({...fields.emptySupplierFields(),commercialName:"Isolated supplier",...extra}))result.set(key,value);return result;};
+  const removal=row=>{const result=new FormData();for(const [key,value] of Object.entries({id:row.id,version:row.version,confirmation:"DELETE"}))result.set(key,value);return result;};
+  const find=async id=>{const result=await service.getSupplier(id);assert.equal(result.status,"ok");return result.data;};
+  phase="pending-schema-guard";assert.equal(await storage.supplierStorage(),"pending");assert.equal((await service.newSupplierEditor()).status,"pending");assert.equal((await service.saveSupplier(form({}),false)).status,"error");
+  const fingerprint=async table=>(await db.query(`SELECT count(*)::int AS count,md5(COALESCE(string_agg(to_jsonb(t)::text,'' ORDER BY to_jsonb(t)::text),'')) AS hash FROM public."${table}" t`)).rows[0];
+  const tables=(await db.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows.map(r=>r.tablename);
+  const before={};for(const table of tables)before[table]=await fingerprint(table);
+  phase="supplier-migration-only-in-isolated";await db.query(await readFile(new URL(names[5]+"/migration.sql",migrations),"utf8"));assert.equal(await storage.supplierStorage(),"ready");
+  for(const table of tables)assert.deepEqual(await fingerprint(table),before[table],"Previous tables must remain unchanged by migration");
+  const customerBefore=await fingerprint("customers");
+  phase="real-persistence-validation-and-noop";
+  const prefix="2098765432",digit=(11-[5,4,3,2,7,6,5,4,3,2].reduce((sum,w,i)=>sum+w*Number(prefix[i]),0)%11)%11;
+  const details={legalName:"Synthetic supplier legal",commercialName:"Synthetic trade",cuit:prefix+digit,vatCondition:"6",contactName:"Synthetic contact",phone:"111",whatsapp:"222",email:"supplier@fixture.invalid",address:"Fixture address",postalCode:"1000",city:"Fixture city",province:"Fixture province",country:"Argentina",internalNotes:"Internal\nfixture"};
+  let saved=await service.saveSupplier(form(details),false);assert.equal(saved.status,"saved");let row=await find(saved.id);assert.equal(row.commercialCode,"P000001");assert.deepEqual(row.details,details);
+  assert.equal((await service.newSupplierEditor()).status,"ok");
+  let events=await prisma.auditEvent.count({where:{entityId:row.id}});
+  const noop=await service.saveSupplier(form({...details,id:row.id,version:row.version}),true);assert.equal(noop.status,"saved");assert.equal(noop.version,row.version);assert.equal(await prisma.auditEvent.count({where:{entityId:row.id}}),events);
+  assert.equal((await service.saveSupplier(form({...details,phone:"changed",id:row.id,version:row.version}),true)).status,"saved");
+  assert.equal((await service.saveSupplier(form({...details,id:row.id,version:row.version}),true)).status,"conflict");
+  assert.equal((await service.deleteSupplier(removal(row))).status,"conflict");row=await find(row.id);assert.equal(row.details.phone,"changed");
+  for(const change of [{cuit:"20111111111"},{commercialName:"",legalName:""},{email:"bad"},{vatCondition:"99"},{tenantId:tenants[1].id},{commercialNumber:"900"}])assert.equal((await service.saveSupplier(form(change),false)).status,"invalid");
+  assert.equal((await service.listSuppliers({q:"P000001",page:"1"})).data.total,1);
+  assert.equal((await service.listSuppliers({q:`${prefix.slice(0,2)}-${prefix.slice(2)}-${digit}`,page:"1"})).data.total,1);
+  assert.equal((await service.listSuppliers({q:"synthetic contact",page:"1"})).data.items[0].details.internalNotes,"");
+  phase="tenant-isolation-and-membership-revocation";
+  access={status:"allowed",context:context(1)};assert.equal((await service.getSupplier(row.id)).status,"missing");assert.notEqual((await service.saveSupplier(form({...details,id:row.id,version:row.version}),true)).status,"saved");assert.notEqual((await service.deleteSupplier(removal(row))).status,"saved");assert.equal((await service.listSuppliers({q:"",page:"1"})).data.total,0);
+  const other=await service.saveSupplier(form({}),false);assert.equal(other.status,"saved");assert.equal((await find(other.id)).commercialCode,"P000001");
+  for(const code of ["MANAGER","SALES","TECHNICIAN","WAREHOUSE","PLATFORM_ADMIN"]){access={status:"allowed",context:context(0,code)};assert.equal((await service.listSuppliers({q:"",page:"1"})).status,"forbidden");assert.equal((await service.saveSupplier(form({}),false)).status,"forbidden");assert.equal((await service.deleteSupplier(removal(row))).status,"forbidden");}
+  access={status:"allowed",context:{...context(),profileId:profiles[1].id}};assert.equal((await service.saveSupplier(form({}),false)).status,"forbidden");
+  access={status:"allowed",context:context()};await prisma.userRoleAssignment.delete({where:{id:assignments[0].id}});assert.equal((await service.deleteSupplier(removal(row))).status,"forbidden");await prisma.userRoleAssignment.create({data:{tenantId:tenants[0].id,userProfileId:profiles[0].id,roleId:roles[0].id,assignmentScope:"COMPANY"}});
+  phase="delete-retains-administrative-audits-and-does-not-reuse-code";
+  events=await prisma.auditEvent.count({where:{entityId:row.id}});assert.equal((await service.deleteSupplier(removal(row))).status,"saved");assert.equal(await prisma.supplier.count({where:{id:row.id}}),0);assert.equal(await prisma.auditEvent.count({where:{entityId:row.id}}),events+1);
+  saved=await service.saveSupplier(form({}),false);assert.equal(saved.status,"saved");row=await find(saved.id);assert.equal(row.commercialCode,"P000002");
+  phase="protected-history-and-unknown-relations";
+  const history=await service.saveSupplier(form({}),false),historyRow=await find(history.id);
+  await prisma.auditEvent.create({data:{tenantId:tenants[0].id,actorUserId:profiles[0].id,entityType:"Supplier",entityId:history.id,action:"PROTECTED_FIXTURE_HISTORY"}});assert.equal((await service.deleteSupplier(removal(historyRow))).status,"invalid");
+  await db.query('CREATE TABLE fixture_supplier_purchases (id uuid PRIMARY KEY,"tenantId" uuid NOT NULL,"supplierId" uuid NOT NULL,FOREIGN KEY ("tenantId","supplierId") REFERENCES suppliers("tenantId",id) ON DELETE RESTRICT)');
+  await db.query('INSERT INTO fixture_supplier_purchases VALUES ($1,$2,$3)',[randomUUID(),tenants[0].id,row.id]);assert.equal((await service.deleteSupplier(removal(row))).status,"invalid");assert.equal(await prisma.supplier.count({where:{id:row.id}}),1);
+  phase="concurrent-reference-protection";
+  const writer=new pg.Client({connectionString:isolated.toString()});await writer.connect();await writer.query('BEGIN');await writer.query('INSERT INTO fixture_supplier_purchases VALUES ($1,$2,$3)',[randomUUID(),tenants[0].id,row.id]);
+  let completed=false;const deletion=service.deleteSupplier(removal(row)).then(result=>{completed=true;return result;});await new Promise(resolve=>setTimeout(resolve,100));assert.equal(completed,false);await writer.query('COMMIT');await writer.end();assert.equal((await deletion).status,"invalid");
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM fixture_supplier_purchases')).rows[0].n,2);await db.query('DROP TABLE fixture_supplier_purchases');
+  await db.query('CREATE TABLE fixture_supplier_cascade ("supplierId" uuid REFERENCES suppliers(id) ON DELETE CASCADE)');assert.equal((await service.deleteSupplier(removal(row))).status,"invalid");await db.query('DROP TABLE fixture_supplier_cascade');
+  phase="concurrent-foreign-key-definition-protection";
+  await db.query('CREATE TABLE fixture_supplier_race_ddl ("supplierId" uuid NOT NULL)');await db.query('INSERT INTO fixture_supplier_race_ddl VALUES ($1)',[row.id]);
+  const ddl=new pg.Client({connectionString:isolated.toString()});await ddl.connect();await ddl.query('BEGIN');await ddl.query('ALTER TABLE fixture_supplier_race_ddl ADD FOREIGN KEY ("supplierId") REFERENCES suppliers(id) ON DELETE CASCADE');
+  let ddlCompleted=false;const ddlDeletion=service.deleteSupplier(removal(row)).then(result=>{ddlCompleted=true;return result;});await new Promise(resolve=>setTimeout(resolve,100));assert.equal(ddlCompleted,false);await ddl.query('COMMIT');await ddl.end();assert.equal((await ddlDeletion).status,"invalid");
+  assert.equal(await prisma.supplier.count({where:{id:row.id}}),1);assert.equal((await db.query('SELECT count(*)::int AS n FROM fixture_supplier_race_ddl')).rows[0].n,1);await db.query('DROP TABLE fixture_supplier_race_ddl');
+  phase="audit-failure-rolls-back-create-edit-delete-and-counter";
+  await db.query("CREATE FUNCTION fixture_supplier_fail_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture audit failure'; END; $$; CREATE TRIGGER fixture_supplier_fail BEFORE INSERT ON audit_events FOR EACH ROW EXECUTE FUNCTION fixture_supplier_fail_audit()");
+  const count=await prisma.supplier.count(),counter=await prisma.supplierCounter.findUnique({where:{tenantId:tenants[0].id}});
+  assert.equal((await service.saveSupplier(form({}),false)).status,"error");assert.equal(await prisma.supplier.count(),count);assert.deepEqual(await prisma.supplierCounter.findUnique({where:{tenantId:tenants[0].id}}),counter);
+  assert.equal((await service.saveSupplier(form({...row.details,commercialName:"Failed edit",id:row.id,version:row.version}),true)).status,"error");assert.deepEqual(await find(row.id),row);
+  assert.equal((await service.deleteSupplier(removal(row))).status,"error");assert.equal(await prisma.supplier.count({where:{id:row.id}}),1);
+  await db.query("DROP TRIGGER fixture_supplier_fail ON audit_events; DROP FUNCTION fixture_supplier_fail_audit()");
+  phase="constraints-concurrency-and-pagination";
+  await assert.rejects(db.query('UPDATE suppliers SET "commercialNumber"=999 WHERE id=$1',[row.id]),{code:"23514"});
+  await assert.rejects(db.query('UPDATE suppliers SET cuit=\'20111111111\' WHERE id=$1',[row.id]),{code:"23514"});
+  await assert.rejects(db.query('UPDATE suppliers SET "legalName"=NULL,"commercialName"=NULL WHERE id=$1',[row.id]),{code:"23514"});
+  const concurrent=await Promise.all([service.saveSupplier(form({}),false),service.saveSupplier(form({}),false)]);assert.ok(concurrent.some(r=>r.status==="saved"));assert.ok(concurrent.every(r=>["saved","conflict"].includes(r.status)));
+  for(let i=0;i<26;i++)assert.equal((await service.saveSupplier(form({commercialName:"Pagination fixture "+i}),false)).status,"saved");
+  const first=await service.listSuppliers({q:"Pagination fixture",page:"1"}),second=await service.listSuppliers({q:"Pagination fixture",page:"2"});assert.equal(first.data.items.length,25);assert.equal(second.data.items.length,1);assert.equal(second.data.pages,2);assert.equal((await service.listSuppliers({q:"Pagination fixture",page:"999"})).data.page,2);
+  assert.equal(new Set([...first.data.items,...second.data.items].map(r=>r.id)).size,26);
+  for(const event of await prisma.auditEvent.findMany({where:{entityType:"Supplier"}}))assert.deepEqual(Object.keys(event).sort(),["id","tenantId","actorUserId","action","entityType","entityId","occurredAt"].sort());
+  assert.deepEqual(await fingerprint("customers"),customerBefore,"Customer fixtures must remain untouched throughout supplier operations");
+  phase="partial-schema-fails-closed";await db.query('ALTER TABLE suppliers DROP CONSTRAINT suppliers_vat_check');assert.equal(await storage.supplierStorage(),"unavailable");assert.equal((await service.newSupplierEditor()).status,"error");assert.equal((await service.saveSupplier(form({}),false)).status,"error");
+  phase="verify-owned-database-and-cleanup";await prisma.$disconnect();prisma=null;await db.end();db=null;
+  const ownership=(await admin.query("SELECT shobj_description(oid,'pg_database') AS marker FROM pg_database WHERE datname=$1",[name])).rows[0];assert.equal(ownership.marker,marker);assert.equal((await admin.query("SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname=$1",[name])).rows[0].n,0);
+  await admin.query(`DROP DATABASE "${name}"`);created=false;
+  console.log("PASS: isolated supplier migration, previous data preserved, real CRUD, OWNER/ADMIN, isolation/revocation, optional fiscal validation, pagination/search, immutable tenant codes, concurrency, protected deletion/reference race, audit retention and rollback. Owned temporary database removed; no milo_dev connection or writes.");
+}catch(error){
+  console.error(error?.stack?.split("\n").filter(line=>line.includes("scripts/suppliers/test-postgres.mjs")).join("\n"));
+  console.error(`SUPPLIER_ISOLATED_FAILURE phase=${phase} code=${typeof error?.code==="string"&&/^[A-Z0-9_]+$/.test(error.code)?error.code:"ASSERTION_OR_PROVIDER_FAILURE"}. Sensitive details suppressed; no automatic repair.`);
+  if(created)console.error("Owned isolated database retained for review: "+name);process.exitCode=1;
+}finally{if(prisma)await prisma.$disconnect();if(db)await db.end();if(admin)await admin.end();}

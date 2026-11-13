@@ -54,3 +54,36 @@ test("denied, missing and failed services stop loading without returning partial
   }
   denied = null;
 });
+
+globalThis[Symbol.for("milo.editor-test")].getBrand = read("brand", { id: product.id, name: "Memory", version: "2026-11-10T00:00:00.000Z" });
+globalThis[Symbol.for("milo.editor-test")].getCategory = read("category", { id: product.id, name: "Memory", version: "2026-11-10T00:00:00.000Z" });
+let taxonomy = await readFile(new URL("../app/panel/catalog-editor-actions.ts", import.meta.url), "utf8");
+for (const declaration of [
+  'import { catalogOptions, getBrand, getCategory } from "@/lib/catalog/service";',
+  'import { resourceId } from "@/lib/catalog/schema";',
+]) { assert.ok(taxonomy.includes(declaration)); taxonomy = taxonomy.replace(declaration, ""); }
+taxonomy = 'const { catalogOptions, getBrand, getCategory, resourceId } = globalThis[Symbol.for("milo.editor-test")];\n' + taxonomy;
+const taxonomyCode = ts.transpileModule(taxonomy, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
+const { loadBrandEditor, loadCategoryEditor } = await import(`data:text/javascript;base64,${Buffer.from(taxonomyCode).toString("base64")}`);
+
+test("brand/category editors reject browser tenant/record objects and use only protected reads", async () => {
+  for (const [load, kind] of [[loadBrandEditor, "brand"], [loadCategoryEditor, "category"]]) {
+    for (const invalid of [undefined, "", "invalid-id", { id: product.id, tenantId: "foreign" }]) {
+      calls.length = 0; denied = null;
+      assert.deepEqual(await load(invalid), { status: "invalid" }); assert.equal(calls.length, 0);
+    }
+    calls.length = 0;
+    assert.deepEqual(await load(null), { status: "ok", data: {} });
+    assert.deepEqual(calls, [["options", undefined]]);
+    calls.length = 0;
+    const result = await load(product.id);
+    assert.equal(result.data.record.id, product.id); assert.deepEqual(calls, [[kind, product.id]]);
+    for (const status of ["forbidden", "missing", "error"]) {
+      denied = { [kind]: { status } };
+      assert.deepEqual(await load(product.id), { status });
+    }
+    denied = { options: { status: "forbidden" } };
+    assert.deepEqual(await load(null), { status: "forbidden" });
+  }
+  denied = null;
+});
